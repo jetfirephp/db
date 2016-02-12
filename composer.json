@@ -1,0 +1,27 @@
+{
+    "name": "jetfirephp/dbal",
+    "type": "library",
+    "description": "JetFire - Database Abstract Layer",
+    "keywords": ["Database", "ORM", "MYSQL", "PDO"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sumugan Sinnarasa",
+            "email": "mugan27@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "doctrine/orm": "2.4.*",
+        "doctrine/data-fixtures": "~1.1",
+        "gabordemooij/redbean": "dev-master"
+    },
+    "autoload": {
+        "psr-4":{
+            "JetFire\\Dbal\\": "src/"
+
+        }
+    },
+    "minimum-stability": "dev"
+}
