@@ -1,6 +1,6 @@
 ## JetFire Database Abstract Layer for ORM
 
-A doctrine facade
+A unique facade for orm. For the moment only Doctrine is supported but other orm like RedBean will be supported.
 
 ### Installation
 
@@ -27,10 +27,16 @@ $options = [
  ];
  
  $db = new \JetFire\Dbal\Doctrine\DoctrineModel($options);
- Model::init($db);
- 
+
+ // Model facade
+ JetFire\Dbal\Model::init($db);
  // Account.php must extends Model class
  $accounts = Account::all();
+ 
+ // or you can use ModelTable facade
+ JetFire\Dbal\ModelTable::init($db);
+ $accounts = Account::table()->all();
+ 
 ```
 
 ### License

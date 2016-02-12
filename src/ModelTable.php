@@ -12,11 +12,13 @@ class ModelTable {
         self::$orm = $orm;
     }
 
-    public static function table ()
+    public static function table ($table = null)
     {
         if (self::$instance === null)
             self::$instance = new self;
-        self::$orm->setTable(get_called_class());
+        (!is_null($table))
+            ? self::$orm->setTable($table)
+            : self::$orm->setTable(get_called_class());
         return self::$instance;
     }
 
