@@ -1,9 +1,9 @@
 <?php
 
-namespace JetFire\Dbal\Pdo;
+namespace JetFire\Db\Pdo;
 
 
-use JetFire\Dbal\ModelInterface;
+use JetFire\Db\ModelInterface;
 
 class PdoModel extends PdoConstructor implements ModelInterface{
 

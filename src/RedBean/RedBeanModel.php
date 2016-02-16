@@ -1,10 +1,9 @@
 <?php
 
-namespace JetFire\Dbal\RedBean;
+namespace JetFire\Db\RedBean;
 
-
-use JetFire\Dbal\ModelInterface;
-use JetFire\Dbal\String;
+use JetFire\Db\ModelInterface;
+use JetFire\Db\String;
 use RedBeanPHP\R;
 
 class RedBeanModel extends RedBeanConstructor implements ModelInterface{
@@ -16,29 +15,40 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
 
     public function setTable($table)
     {
-        $class = explode('\\',$table);
-        $this->table = $this->prefix.String::pluralize(strtolower(end($class)));
+        if(is_null($this->table)) {
+            $class = explode('\\', $table);
+            $this->table = $this->prefix . String::pluralize(strtolower(end($class)));
+        }
         return $this;
     }
 
-    public function repo()
+    public function orm()
     {
         return new R;
     }
 
-    public function em()
+    public function sql($sql, $params = [])
     {
-        return new R;
+        if(strpos('?',$sql) === false) {
+            $result = [];
+            foreach ($params as $key => $param)
+                $result[':'.$key] = $param;
+            $params = $result;
+        }
+        return $this->execQuery($sql,$params);
+    }
+
+    private function execQuery($sql,$params){
+        return (strtolower(substr($sql,0,6 )) === 'select')
+            ? R::getAll( $sql, $params)
+            : R::exec( $sql, $params);
     }
 
     public function query($query)
     {
-        // TODO: Implement query() method.
-    }
-
-    public function queryBuilder()
-    {
-        // TODO: Implement queryBuilder() method.
+        return (substr(strtolower($query),0,6 ) === 'select')
+            ? R::getAll( $query)
+            : R::exec( $query);
     }
 
     public function all()
@@ -51,63 +61,84 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         return R::load( $this->table, $id);
     }
 
-    public function sql($sql, $params = [])
-    {
-        if(strpos('?',$sql) === false) {
-            $result = [];
-            foreach ($params as $param)
-                $result[':'.$param] = $param;
-            $params = $result;
-        }
-        return R::getAll( $sql,
-            $params
-        );
-    }
-
     public function select()
     {
-        // TODO: Implement select() method.
+        $this->sql = 'SELECT';
+        $args = func_get_args();
+        if(count($args) == 0)$this->sql .= ' *,';
+        foreach ($args as $arg)
+            $this->sql .= ' ' . $arg . ',';
+        $this->sql = substr($this->sql, 0, -1) . ' FROM ' . $this->table;
+        return $this;
     }
 
     public function where($key, $operator = null, $value = null, $boolean = "AND")
     {
-        // TODO: Implement where() method.
+        if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
+        if (empty($this->sql)) $this->sql = ' WHERE';
+        if (is_null($value)|| $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
+        // if we update or delete the entity
+       /* if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
+            if (is_null($this->sql->getParameter($key)))
+                $this->sql = $this->sql->where($this->alias . ".$key $operator :$key")->setParameter($key, $value);
+            else
+                $this->sql = $this->sql->where($this->alias . ".$key $operator :$key" . '_' . $value)->setParameter($key . '_' . $value, $value);
+            return $this;
+        }*/
+
+        //if we read the entity
+        $param = $key;
+        if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
+        $this->sql .= (substr($this->sql, -6) == ' WHERE')
+            ? ' ' . "$param $operator :$key"
+            : ' ' . $boolean . ' ' . "$param $operator :$key";
+        $this->params[$key] = $value;
+        return $this;
     }
 
     public function orWhere($key, $operator = null, $value = null)
     {
-        // TODO: Implement orWhere() method.
+        return $this->where($key, $operator, $value, 'OR');
     }
 
     public function whereRaw($sql, $value = null)
     {
-        // TODO: Implement whereRaw() method.
+        if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT') $this->sql .= ' WHERE ';
+        if (empty($this->sql)) $this->sql = ' WHERE ';
+        $this->sql .= $sql;
+        if(!is_null($value))$this->params = array_merge($this->params,$value);
+        return $this;
     }
 
     public function orderBy($value, $order = 'ASC')
     {
-        // TODO: Implement orderBy() method.
+        $this->sql .= ' ORDER BY '.$value.' '.$order;
+        return $this;
     }
 
-    public function take($value, $array = false)
+    public function take($value, $single = false)
     {
         // TODO: Implement take() method.
     }
 
-    public function get($array = false)
+    public function get($single = false)
     {
-        // TODO: Implement get() method.
-    }
-
-    public function getArray($array = false)
-    {
-        // TODO: Implement getArray() method.
+        $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' ' . $this->sql : $this->sql;
+        $query = $this->execQuery($this->sql,$this->params);
+        $this->sql = '';
+        $this->params = [];
+        $this->table = '';
+        return $query;
     }
 
     public function count()
     {
         // TODO: Implement count() method.
     }
+
+//|---------------------------------------------------------------------------------|
+//| Update methods are managed here                                                 |
+//|---------------------------------------------------------------------------------|
 
     public function update($id = null, $contents = null)
     {
@@ -138,6 +169,11 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         return R::exec($this->sql,$this->params);
     }
 
+//|---------------------------------------------------------------------------------|
+//| Create methods are managed here                                                 |
+//|---------------------------------------------------------------------------------|
+
+
     public function create($contents = null)
     {
         $table = R::xdispense($this->table);
@@ -148,20 +184,11 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         return R::store($table);
     }
 
-    public function save()
-    {
-        // TODO: Implement save() method.
-    }
 
-    public function watch($entity = null)
-    {
-        // TODO: Implement watch() method.
-    }
+//|---------------------------------------------------------------------------------|
+//| Delete methods are managed here                                                 |
+//|---------------------------------------------------------------------------------|
 
-    public function watchAndSave($entity = null)
-    {
-        // TODO: Implement watchAndSave() method.
-    }
 
     public function delete()
     {
@@ -179,8 +206,25 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         // TODO: Implement destroy() method.
     }
 
+//|---------------------------------------------------------------------------------|
+//| Call Static                                                                     |
+//|---------------------------------------------------------------------------------|
+
+    /**
+     * @param $name
+     * @param $args
+     * @return mixed
+     */
     public function callStatic($name, $args)
     {
-        // TODO: Implement callStatic() method.
+        if(method_exists($this,$name))
+            return call_user_func_array([$this,$name],$args);
+        return R::$name($args);
     }
+
+//|---------------------------------------------------------------------------------|
+//| Custom methods                                                                  |
+//|---------------------------------------------------------------------------------|
+
+
 }

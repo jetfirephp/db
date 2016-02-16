@@ -12,14 +12,15 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0",
-        "doctrine/orm": "2.4.*",
-        "doctrine/data-fixtures": "~1.1",
-        "gabordemooij/redbean": "dev-master"
+        "php": ">=5.4.0"
+    },
+    "suggest": {
+        "doctrine/orm": "For Doctrine usage",
+        "gabordemooij/redbean": "For RedBean usage"
     },
     "autoload": {
         "psr-4":{
-            "JetFire\\Dbal\\": "src/"
+            "JetFire\\Db\\": "src/"
 
         }
     },

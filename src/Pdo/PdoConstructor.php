@@ -1,6 +1,6 @@
 <?php
 
-namespace JetFire\Dbal\Pdo;
+namespace JetFire\Db\Pdo;
 
 use PDO;
 

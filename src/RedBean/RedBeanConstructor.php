@@ -1,6 +1,6 @@
 <?php
 
-namespace JetFire\Dbal\RedBean;
+namespace JetFire\Db\RedBean;
 
 use RedBeanPHP\R;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace JetFire\Dbal\Doctrine;
+namespace JetFire\Db\Doctrine;
 use \Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 

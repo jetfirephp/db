@@ -1,16 +1,28 @@
 <?php
 
-namespace JetFire\Dbal\Doctrine;
+namespace JetFire\Db\Doctrine;
 
 use Doctrine\Common\EventManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
 
+/**
+ * Class DoctrineConstructor
+ * @package JetFire\Db\Doctrine
+ */
 class DoctrineConstructor {
 
+    /**
+     * @var EntityManager
+     */
     public $em;
 
+    /**
+     * @param array $options
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Exception
+     */
     public function __construct($options = [])
     {
         $isDevMode = (isset($options['dev']) && $options['dev'])?true:false;

@@ -1,6 +1,6 @@
 <?php
 
-namespace JetFire\Dbal;
+namespace JetFire\Db;
 
 class String
   {
