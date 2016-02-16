@@ -1,5 +1,5 @@
 {
-    "name": "jetfirephp/dbal",
+    "name": "jetfirephp/db",
     "type": "library",
     "description": "JetFire - Database Abstract Layer",
     "keywords": ["Database", "ORM", "MYSQL", "PDO"],

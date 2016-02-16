@@ -86,7 +86,7 @@ $providers = [
         return new \JetFire\Db\RedBean\RedBeanModel($redbeanConfig);
     },
 ];
-Model::provide($providers);
+JetFire\Db\Model::provide($providers);
 $account1 = Account::orm('doctrine')->select('lastName')->where('firstName','Peter')->get();
 $account2 = Account::orm('redbean')->select('firstName','lastName')->where('firstName','Peter')->orWhere('age','>',20)->get();
 ```
