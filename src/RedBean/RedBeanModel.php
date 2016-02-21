@@ -22,7 +22,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         return $this;
     }
 
-    public function orm()
+    public function getOrm()
     {
         return new R;
     }
@@ -149,7 +149,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
 
     public function with($contents)
     {
-        if(!empty($this->calledTable)) {
+        if(!is_null($this->calledTable)) {
             foreach ($contents as $key => $content)
                 $this->calledTable[$key] = $content;
             R::store($this->calledTable);
@@ -166,7 +166,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
             $this->params[':'.$key] = $content;
         }
         $this->sql = substr($update, 0, -1) . $this->sql;
-        return R::exec($this->sql,$this->params);
+        return (R::exec($this->sql,$this->params) >= 1)?true:false;
     }
 
 //|---------------------------------------------------------------------------------|
@@ -219,7 +219,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
     {
         if(method_exists($this,$name))
             return call_user_func_array([$this,$name],$args);
-        return R::$name($args);
+        return call_user_func_array([$this->getOrm(),$name],$args);
     }
 
 //|---------------------------------------------------------------------------------|

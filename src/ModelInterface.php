@@ -18,7 +18,7 @@ interface ModelInterface {
     /**
      * @return mixed
      */
-    public function orm();
+    public function getOrm();
 
     /**
      * @param $sql

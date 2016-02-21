@@ -74,7 +74,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     /**
      * @return \Doctrine\ORM\EntityManager
      */
-    public function orm(){
+    public function getOrm(){
         return $this->em;
     }
 
