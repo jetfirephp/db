@@ -34,7 +34,7 @@ class DoctrineConstructor {
             if(!isset($options['driver']) || !isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
                 throw new \Exception('Missing arguments for doctrine constructor');
             $dbParams = array(
-                'driver'   => $options['driver'],
+                'driver'   => ($options['driver']==='mysql')?'pdo_mysql':$options['driver'],
                 'user'     => $options['user'],
                 'password' => $options['pass'],
                 'host'     => $options['host'],
