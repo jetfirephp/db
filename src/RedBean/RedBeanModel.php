@@ -128,7 +128,17 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         $this->sql = '';
         $this->params = [];
         $this->table = '';
-        return $query;
+        return $single ? (object)$query[0] :$query;
+    }
+
+    public function getArray($single = false)
+    {
+        $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' ' . $this->sql : $this->sql;
+        $query = $this->execQuery($this->sql,$this->params);
+        $this->sql = '';
+        $this->params = [];
+        $this->table = '';
+        return $single ? $query[0] :$query;
     }
 
     public function count()

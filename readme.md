@@ -38,10 +38,18 @@ $options = [
      'prefix' => 'jt_'
  ];
  
- $db = new \JetFire\Db\Doctrine\DoctrineModel($options);
-
  // Model facade
+ $db = new \JetFire\Db\Doctrine\DoctrineModel($options);
  JetFire\Db\Model::init($db);
+ 
+ // or for lazy loading
+ // $db = [
+ //     'doctrine' => function() use ($options) {
+ //         new \JetFire\Db\Doctrine\DoctrineModel($options);
+ //     }
+ // ]
+ // JetFire\Db\Model::provide($db);
+ 
  // Account.php must extends Model class
  $accounts = Account::all();
  
@@ -57,18 +65,9 @@ $options = [
 // Require composer autoloader
 require __DIR__ . '/vendor/autoload.php';
 
-// redbean configuration
-$redbeanConfig = [
+// configuration
+$config = [
     'driver' => 'mysql',
-    'host' => 'localhost',
-    'user' => 'root',
-    'pass' => '',
-    'db' => 'project',
-    'prefix' => 'jt_',
-];
-// doctrine configuration
-$doctrineConfig = [
-    'driver' => 'pdo_mysql',
     'host' => 'localhost',
     'user' => 'root',
     'pass' => '',
@@ -77,18 +76,21 @@ $doctrineConfig = [
     'path' => [__DIR__.'/']
 ];
 
+
 // set your orm provider
 $providers = [
-    'doctrine' => function()use($doctrineConfig){
-        return new \JetFire\Db\Doctrine\DoctrineModel($doctrineConfig);
+    'doctrine' => function()use($config){
+        return new \JetFire\Db\Doctrine\DoctrineModel($config);
     },
-    'redbean' => function()use($redbeanConfig){
-        return new \JetFire\Db\RedBean\RedBeanModel($redbeanConfig);
+    'redbean' => function()use($config){
+        return new \JetFire\Db\RedBean\RedBeanModel($config);
     },
 ];
 JetFire\Db\Model::provide($providers);
 $account1 = Account::orm('doctrine')->select('lastName')->where('firstName','Peter')->get();
 $account2 = Account::orm('redbean')->select('firstName','lastName')->where('firstName','Peter')->orWhere('age','>',20)->get();
+// you can also omit the orm method. The model will load the first orm provided (here doctrine). To load another orm by default you have to add the orm key in second argument of provide method 
+$account2 = Account::select('firstName','lastName')->where('firstName','Peter')->orWhere('age','>',20)->get(); // will load doctrine orm
 ```
 
 ### License

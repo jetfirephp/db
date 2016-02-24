@@ -264,6 +264,31 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     }
 
     /**
+     * @param bool $single
+     * @return array|mixed
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getArray($single = false)
+    {
+        $this->get_class_name();
+        $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' .$this->class . ' ' . $this->alias . $this->sql : $this->sql;
+        $query = $this->query($this->sql);
+        if (!empty($this->params))
+            foreach ($this->params as $key => $param) {
+                if (is_numeric($key))
+                    $query->setParameter($key + 1, $param);
+                else
+                    $query->setParameter($key, $param);
+            }
+        $this->sql = '';
+        $this->params = [];
+        $this->table = '';
+        return ($single && count($query->getResult()) == 1) ? $query->getSingleResult(Query::HYDRATE_ARRAY) : $query->getArrayResult();
+    }
+
+
+    /**
      * @return $this
      */
     public function count(){
@@ -461,30 +486,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     public function queryBuilder()
     {
         return $this->em->createQueryBuilder();
-    }
-
-    /**
-     * @param bool $single
-     * @return array|mixed
-     * @throws \Doctrine\ORM\NoResultException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    public function getArray($single = false)
-    {
-        $this->get_class_name();
-        $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' .$this->class . ' ' . $this->alias . $this->sql : $this->sql;
-        $query = $this->query($this->sql);
-        if (!empty($this->params))
-            foreach ($this->params as $key => $param) {
-                if (is_numeric($key))
-                    $query->setParameter($key + 1, $param);
-                else
-                    $query->setParameter($key, $param);
-            }
-        $this->sql = '';
-        $this->params = [];
-        $this->table = '';
-        return ($single && count($query->getResult()) == 1) ? $query->getSingleResult(Query::HYDRATE_ARRAY) : $query->getArrayResult();
     }
 
     /**
