@@ -127,7 +127,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         $query = $this->execQuery($this->sql,$this->params);
         $this->sql = '';
         $this->params = [];
-        $this->table = '';
         return $single ? (object)$query[0] :$query;
     }
 
@@ -137,7 +136,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface{
         $query = $this->execQuery($this->sql,$this->params);
         $this->sql = '';
         $this->params = [];
-        $this->table = '';
         return $single ? $query[0] :$query;
     }
 
