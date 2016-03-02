@@ -10,7 +10,8 @@ use JetFire\Db\ModelInterface;
  * Class DoctrineModel
  * @package JetFire\Db\Doctrine
  */
-class DoctrineModel extends DoctrineConstructor implements ModelInterface{
+class DoctrineModel extends DoctrineConstructor implements ModelInterface
+{
 
     /**
      * @var
@@ -35,18 +36,26 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     public $alias;
 
     /**
-     * @var string
+     * @var
      */
-    public $class = '';
+    public $class;
 
     /**
      * @param $class
      * @return $this
      */
-    public function setTable($class){
-        if(empty($this->class))
-            $this->class = $class;
+    public function setTable($class)
+    {
+        $this->class = $class;
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTable()
+    {
+        return $this->class;
     }
 
     /**
@@ -54,10 +63,10 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
      */
     private function get_class_name($without_namespace = true)
     {
-        if (empty($this->table)) {
+        if (is_null($this->table)) {
             $class = $this->class;
             if ($without_namespace) {
-                $class = explode('\\',$class);
+                $class = explode('\\', $class);
                 end($class);
                 $last = key($class);
                 $class = $class[$last];
@@ -74,7 +83,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     /**
      * @return \Doctrine\ORM\EntityManager
      */
-    public function getOrm(){
+    public function getOrm()
+    {
         return $this->em;
     }
 
@@ -86,7 +96,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     public function sql($sql, $params = [])
     {
         $rsm = new ResultSetMapping();
-        $query =  $this->em->createNativeQuery($sql, $rsm);
+        $query = $this->em->createNativeQuery($sql, $rsm);
         if (!empty($params))
             foreach ($params as $key => $param)
                 $query->setParameter($key + 1, $param);
@@ -139,7 +149,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
         $this->get_class_name();
         $this->sql = 'SELECT';
         $args = func_get_args();
-        if(count($args) == 0)$this->sql .= ' *,';
+        if (count($args) == 0) $this->sql .= ' *,';
         foreach ($args as $arg)
             $this->sql .= ' ' . $this->alias . '.' . $arg . ',';
         $this->sql = substr($this->sql, 0, -1) . ' FROM ' . $this->class . ' ' . $this->alias;
@@ -158,7 +168,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
         $this->get_class_name();
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (empty($this->sql)) $this->sql = ' WHERE';
-        if (is_null($value)|| $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
+        if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         // if we update or delete the entity
         if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
             if (is_null($this->sql->getParameter($key)))
@@ -199,7 +209,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT') $this->sql .= ' WHERE ';
         if (empty($this->sql)) $this->sql = ' WHERE ';
         $this->sql .= $sql;
-        if(!is_null($value))$this->params = array_merge($this->params,$value);
+        if (!is_null($value)) $this->params = array_merge($this->params, $value);
         return $this;
     }
 
@@ -208,8 +218,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
      * @param string $order
      * @return $this
      */
-    public function orderBy($value, $order = 'ASC'){
-        $this->sql .= ' ORDER BY '.$this->alias.'.'.$value.' '.$order;
+    public function orderBy($value, $order = 'ASC')
+    {
+        $this->sql .= ' ORDER BY ' . $this->alias . '.' . $value . ' ' . $order;
         return $this;
     }
 
@@ -220,7 +231,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
      * @throws \Doctrine\ORM\NoResultException
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function take($value,$single = false){
+    public function take($value, $single = false)
+    {
         $this->get_class_name();
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $query = $this->query($this->sql);
@@ -234,8 +246,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
         $query->setMaxResults($value);
         $this->sql = '';
         $this->params = [];
-        $this->table = '';
-        return ($value == 1 && $single)?$query->getSingleResult():$query->getResult();
+        $this->table = null;
+        return ($value == 1 && $single) ? $query->getSingleResult() : $query->getResult();
     }
 
 
@@ -259,7 +271,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
             }
         $this->sql = '';
         $this->params = [];
-        $this->table = '';
+        $this->table = null;
         return ($single && count($query->getResult()) == 1) ? $query->getSingleResult() : $query->getResult();
     }
 
@@ -272,7 +284,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     public function getArray($single = false)
     {
         $this->get_class_name();
-        $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' .$this->class . ' ' . $this->alias . $this->sql : $this->sql;
+        $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $query = $this->query($this->sql);
         if (!empty($this->params))
             foreach ($this->params as $key => $param) {
@@ -283,7 +295,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
             }
         $this->sql = '';
         $this->params = [];
-        $this->table = '';
+        $this->table = null;
         return ($single && count($query->getResult()) == 1) ? $query->getSingleResult(Query::HYDRATE_ARRAY) : $query->getArrayResult();
     }
 
@@ -291,10 +303,11 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     /**
      * @return $this
      */
-    public function count(){
+    public function count()
+    {
         $this->get_class_name();
-        $last = (isset($this->sql))?$this->sql:'';
-        $this->sql = 'SELECT COUNT('.$this->alias.') FROM ' . $this->class . ' ' . $this->alias.' '.$last;
+        $last = (isset($this->sql)) ? $this->sql : '';
+        $this->sql = 'SELECT COUNT(' . $this->alias . ') FROM ' . $this->class . ' ' . $this->alias . ' ' . $last;
         return $this;
     }
 
@@ -378,7 +391,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
     public function create($contents = null)
     {
         $this->entity = new $this->class;
-        if(is_null($contents)) return $this->entity;
+        if (is_null($contents)) return $this->entity;
         $replace = ['-', '_', '.'];
         foreach ($contents as $key => $content) {
             $key = str_replace($replace, ' ', $key);
@@ -387,8 +400,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
             if (method_exists($this->entity, $method))
                 $this->entity->$method($content);
         }
-         $this->em->persist($this->entity);
-         $this->em->flush();
+        $this->em->persist($this->entity);
+        $this->em->flush();
         $this->entity = null;
         return true;
     }
@@ -424,8 +437,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
      */
     public function remove($content)
     {
-         $this->em->remove($content);
-         $this->em->flush();
+        $this->em->remove($content);
+        $this->em->flush();
         return true;
     }
 
@@ -454,9 +467,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface{
      */
     public function callStatic($name, $args)
     {
-        if(method_exists($this,$name))
-            return call_user_func_array([$this,$name],$args);
-        return call_user_func_array([$this->repo(),$name],$args);
+        if (method_exists($this, $name))
+            return call_user_func_array([$this, $name], $args);
+        return call_user_func_array([$this->repo(), $name], $args);
     }
 
 //|---------------------------------------------------------------------------------|

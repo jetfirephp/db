@@ -1,6 +1,7 @@
 <?php
 
 namespace JetFire\Db\Doctrine;
+
 use \Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
@@ -20,7 +21,7 @@ class TablePrefix
      */
     public function __construct($prefix)
     {
-        $this->prefix = (string) $prefix;
+        $this->prefix = (string)$prefix;
     }
 
     /**

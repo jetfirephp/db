@@ -7,13 +7,19 @@ namespace JetFire\Db;
  * Interface ModelInterface
  * @package JetFire\Db
  */
-interface ModelInterface {
+interface ModelInterface
+{
 
     /**
      * @param $table
      * @return mixed
      */
     public function setTable($table);
+
+    /**
+     * @return mixed
+     */
+    public function getTable();
 
     /**
      * @return mixed
@@ -86,7 +92,7 @@ interface ModelInterface {
      * @internal param bool $array
      * @return mixed
      */
-    public function take($value,$single = false);
+    public function take($value, $single = false);
 
     /**
      * @param bool $single
@@ -122,7 +128,7 @@ interface ModelInterface {
      * @param null $contents
      * @return mixed
      */
-    public function create($contents = null );
+    public function create($contents = null);
 
     /**
      * @return mixed

@@ -25,17 +25,18 @@ $ composer require gabordemooij/redbean
 ### Basic Usage
 
 ```php
-// Require composer autoloader
-require __DIR__ . '/vendor/autoload.php';
+ // Require composer autoloader
+ require __DIR__ . '/vendor/autoload.php';
 
-// database config
-$options = [
+ // database config
+ $options = [
      'driver' => 'pdo_sqlite',
      'host' => 'localhost',
      'user' => 'root',
      'pass' => '',
      'db' => 'project',
-     'prefix' => 'jt_'
+     'prefix' => 'jt_',
+     'path' => [__DIR__.'/']
  ];
  
  // Model facade
@@ -50,12 +51,16 @@ $options = [
  // ]
  // JetFire\Db\Model::provide($db);
  
- // Account.php must extends Model class
- $accounts = Account::all();
+ // And for retrieve data you have to possible way
  
- // or you can use ModelTable facade
- JetFire\Db\ModelTable::init($db);
- $accounts = Account::table()->all();
+ // 1)
+ $accounts = Model::table('Account')->all(); 
+ // Doctrine : the argument for table method must be the table class (with namespace)
+ // RedBean : the argument for table method must be the name of the table in the database ('accounts') 
+ 
+ // 2)
+ $accounts = Account::all();
+ // Account.php must extends Model class
  
 ```
 
