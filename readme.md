@@ -30,7 +30,7 @@ $ composer require gabordemooij/redbean
 
  // database config
  $options = [
-     'driver' => 'pdo_sqlite',
+     'driver' => 'mysql',
      'host' => 'localhost',
      'user' => 'root',
      'pass' => '',
@@ -51,7 +51,7 @@ $ composer require gabordemooij/redbean
  // ]
  // JetFire\Db\Model::provide($db);
  
- // And for retrieve data you have to possible way
+ // And for retrieve data you have 2 possible ways
  
  // 1)
  $accounts = Model::table('Account')->all();
