@@ -225,7 +225,7 @@ $account->email = 'peter.parker@spiderman.com';
 $account->save();
 ```
 
-##### Retrieve && Read
+##### Retrieve & Read
 
 To load all accounts :
 
@@ -243,7 +243,7 @@ If you have to specify other parameters, you can do it like this :
 
 ```php
 // with additional parameters
-$account = Account::where('id',1)->where('last_name','Parker)->get();
+$account = Account::where('id',1)->where('last_name','Parker')->get();
 // or
 $account = Account::whereRaw('a.id = :id AND a.last_name = :last_name',['id' => 1, 'last_name' => 'Parker'])->get();
 // select only some fields
@@ -251,12 +251,12 @@ $account = Account::select('id','first_name')->where('id',1)->where('last_name',
 // order by
 $account = Account::orderBy('id','DESC')->get(); 
 // count
-$account = Account::where('last_name','Parker)->count(); // return 1
+$account = Account::where('last_name','Parker')->count(); // return 1
 // limit row
 $account = Account::take(2); // return only the first 2 accounts
 ```
 
-And to read data :
+And to read the model data :
 
 ```php
 $first_name = $account->first_name; // return 'Peter'
@@ -278,7 +278,7 @@ Account::update(1)->with([
 ```
 2) Update with specif parameters
 ```php
-Account::where('id',1)->set(['first_name' => 'Peter 2']);
+Account::where('id',1)->where('id',2)->set(['first_name' => 'Peter 2']);
 ```
 3) Retrieve the table object first then set your fields after
 ```php
