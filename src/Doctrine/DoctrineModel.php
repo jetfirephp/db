@@ -4,6 +4,7 @@ namespace JetFire\Db\Doctrine;
 
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
+use JetFire\Db\IteratorResult;
 use JetFire\Db\ModelInterface;
 
 /**
@@ -16,29 +17,41 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     /**
      * @var
      */
-    protected $sql;
+    public $class;
+    /**
+     * @var
+     */
+    private $entity;
+    /**
+     * @var
+     */
+    private $table;
+    /**
+     * @var
+     */
+    private $alias;
+    /**
+     * @var
+     */
+    private $sql;
     /**
      * @var array
      */
-    protected $params = [];
+    private $params = [];
 
     /**
      * @var
      */
-    public $entity;
-    /**
-     * @var
-     */
-    public $table;
-    /**
-     * @var
-     */
-    public $alias;
+    private $instance;
 
     /**
-     * @var
+     * @return mixed
      */
-    public $class;
+    public function getInstance(){
+        if(is_null($this->instance))
+            $this->instance = new $this->class;
+        return $this->instance;
+    }
 
     /**
      * @param $class
@@ -89,6 +102,14 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     }
 
     /**
+     * @return \Doctrine\ORM\EntityRepository
+     */
+    public function repo()
+    {
+        return $this->em->getRepository($this->class);
+    }
+
+    /**
      * @param $sql
      * @param array $params
      * @return array
@@ -104,15 +125,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         return $query->getResult();
     }
 
-    /**
-     * @param $query
-     * @return Query
-     */
-    public function query($query)
-    {
-        return $this->em->createQuery($query);
-    }
-
 
 //|---------------------------------------------------------------------------------|
 //| Reading method are managed here                                                 |
@@ -124,7 +136,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function all()
     {
-        return $this->repo($this->class)->findAll();
+        return new IteratorResult($this->repo($this->class)->findAll(),'doctrine');
     }
 
     /**
@@ -137,7 +149,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function find($id)
     {
         $this->entity = $this->em->find($this->class, $id);
-        return $this->entity;
+        return new DoctrineSingleResult($this->entity,function(){return $this->em();});
     }
 
 
@@ -168,7 +180,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->get_class_name();
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (empty($this->sql)) $this->sql = ' WHERE';
-        if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
+     /*   if(is_null($operator) || strtolower($operator) == 'null' || (strtolower($operator) == 'is' && (strtolower($value) == 'null' || is_null($value))))
+            list($key, $operator, $value) = array($key, 'is', $operator);
+        else*/ if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         // if we update or delete the entity
         if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
             if (is_null($this->sql->getParameter($key)))
@@ -247,7 +261,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->sql = '';
         $this->params = [];
         $this->table = null;
-        return ($value == 1 && $single) ? $query->getSingleResult() : $query->getResult();
+        return ($value == 1 && $single) ? new DoctrineSingleResult($query->getSingleResult(),function(){return $this->em();}) : new IteratorResult($query->getResult());
     }
 
 
@@ -259,6 +273,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function get($single = false)
     {
+        if(is_null($this->sql))return new DoctrineSingleResult($this->getInstance(),function(){return $this->em();});
         $this->get_class_name();
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $query = $this->query($this->sql);
@@ -272,33 +287,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->sql = '';
         $this->params = [];
         $this->table = null;
-        return ($single && count($query->getResult()) == 1) ? $query->getSingleResult() : $query->getResult();
+        $result = $query->getResult();
+        return ($single || count($result) ==  1) ? new DoctrineSingleResult($result[0],function(){return $this->em();}) : new IteratorResult($result,'doctrine');
     }
-
-    /**
-     * @param bool $single
-     * @return array|mixed
-     * @throws \Doctrine\ORM\NoResultException
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    public function getArray($single = false)
-    {
-        $this->get_class_name();
-        $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
-        $query = $this->query($this->sql);
-        if (!empty($this->params))
-            foreach ($this->params as $key => $param) {
-                if (is_numeric($key))
-                    $query->setParameter($key + 1, $param);
-                else
-                    $query->setParameter($key, $param);
-            }
-        $this->sql = '';
-        $this->params = [];
-        $this->table = null;
-        return ($single && count($query->getResult()) == 1) ? $query->getSingleResult(Query::HYDRATE_ARRAY) : $query->getArrayResult();
-    }
-
 
     /**
      * @return $this
@@ -432,17 +423,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     }
 
     /**
-     * @param $content
-     * @return bool
-     */
-    public function remove($content)
-    {
-        $this->em->remove($content);
-        $this->em->flush();
-        return true;
-    }
-
-    /**
      * @return bool
      */
     public function destroy()
@@ -475,15 +455,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
 //|---------------------------------------------------------------------------------|
 //| Custom methods                                                                  |
 //|---------------------------------------------------------------------------------|
-
-
-    /**
-     * @return \Doctrine\ORM\EntityRepository
-     */
-    public function repo()
-    {
-        return $this->em->getRepository($this->class);
-    }
 
     /**
      * @return \Doctrine\ORM\EntityManager
@@ -533,5 +504,24 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         return true;
     }
 
+    /**
+     * @param $content
+     * @return bool
+     */
+    public function remove($content)
+    {
+        $this->em->remove($content);
+        $this->em->flush();
+        return true;
+    }
+
+    /**
+     * @param $query
+     * @return Query
+     */
+    public function query($query)
+    {
+        return $this->em->createQuery($query);
+    }
 
 } 

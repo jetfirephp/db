@@ -2,6 +2,7 @@
 
 namespace JetFire\Db\RedBean;
 
+use JetFire\Db\IteratorResult;
 use JetFire\Db\ModelInterface;
 use JetFire\Db\String;
 use RedBeanPHP\R;
@@ -16,7 +17,15 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     /**
      * @var
      */
+    public $class;
+    /**
+     * @var
+     */
     private $table;
+    /**
+     * @var
+     */
+    private $alias;
     /**
      * @var
      */
@@ -31,13 +40,29 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     private $params = [];
 
     /**
+     * @var
+     */
+    private $instance;
+
+    /**
+     * @return mixed
+     */
+    public function getInstance(){
+        if(is_null($this->instance))
+            $this->instance = new $this->class;
+        return $this->instance;
+    }
+
+    /**
      * @param $table
      * @return $this
      */
     public function setTable($table)
     {
+        $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = $this->prefix . String::pluralize(strtolower(end($class)));
+        $this->table = $this->prefix . String::pluralize(strtolower($end = end($class)));
+        $this->alias = strtolower(substr($end, 0, 1));
         return $this;
     }
 
@@ -49,6 +74,9 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         return $this->table;
     }
 
+//|---------------------------------------------------------------------------------|
+//| Getters are managed here                                                        |
+//|---------------------------------------------------------------------------------|
     /**
      * @return R
      */
@@ -56,6 +84,23 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     {
         return new R;
     }
+
+    /**
+     * @return null
+     */
+    public function repo()
+    {
+        if(isset($this->options['repositories']) && is_array($this->options['repositories']))
+            foreach($this->options['repositories'] as $repo) {
+                $class = explode('\\', $this->class);$class = end($class);
+                if (is_file(rtrim($repo['path'], '/') . '/' . $class . 'Repository.php')) {
+                    $class = $repo['namespace']  . $class . 'Repository';
+                    return new $class();
+                }
+            }
+        return null;
+    }
+
 
     /**
      * @param $sql
@@ -81,27 +126,21 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     private function execQuery($sql, $params)
     {
         return (strtolower(substr($sql, 0, 6)) === 'select')
-            ? R::getAll($sql, $params)
+            ? new IteratorResult(R::getAll($sql, $params),'redbean')
             : R::exec($sql, $params);
     }
 
-    /**
-     * @param $query
-     * @return array|int
-     */
-    public function query($query)
-    {
-        return (substr(strtolower($query), 0, 6) === 'select')
-            ? R::getAll($query)
-            : R::exec($query);
-    }
+
+//|---------------------------------------------------------------------------------|
+//| Reading method are managed here                                                 |
+//|---------------------------------------------------------------------------------|
 
     /**
      * @return array
      */
     public function all()
     {
-        return R::findAll($this->table);
+        return new IteratorResult(R::findAll($this->table),'redbean');
     }
 
     /**
@@ -110,7 +149,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function find($id)
     {
-        return R::load($this->table, $id);
+        return new RedBeanSingleResult(R::load($this->table, $id));
     }
 
     /**
@@ -179,7 +218,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT') $this->sql .= ' WHERE ';
         if (empty($this->sql)) $this->sql = ' WHERE ';
         $this->sql .= $sql;
-        if (!is_null($value)) $this->params = array_merge($this->params, $value);
+        if (!is_null($value)) $this->params = array_merge($this->params,(array)$value );
         return $this;
     }
 
@@ -193,6 +232,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         $this->sql .= ' ORDER BY ' . $value . ' ' . $order;
         return $this;
     }
+
 
     /**
      * @param $value
@@ -209,24 +249,12 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function get($single = false)
     {
-        $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' ' . $this->sql : $this->sql;
+        if(is_null($this->sql))return new RedBeanSingleResult(R::xdispense($this->table));
+        $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' '. $this->alias . $this->sql : $this->sql;
         $query = $this->execQuery($this->sql, $this->params);
         $this->sql = '';
         $this->params = [];
-        return $single ? (object)$query[0] : $query;
-    }
-
-    /**
-     * @param bool $single
-     * @return array|int
-     */
-    public function getArray($single = false)
-    {
-        $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' ' . $this->sql : $this->sql;
-        $query = $this->execQuery($this->sql, $this->params);
-        $this->sql = '';
-        $this->params = [];
-        return $single ? $query[0] : $query;
+        return ($single || count($query) == 1) ? new RedBeanSingleResult($query[0]) : new IteratorResult($query,'redbean');
     }
 
     /**
@@ -287,7 +315,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
 //| Create methods are managed here                                                 |
 //|---------------------------------------------------------------------------------|
 
-
     /**
      * @param null $contents
      * @return int|string
@@ -314,16 +341,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     public function delete()
     {
         // TODO: Implement delete() method.
-    }
-
-    /**
-     * @param $content
-     * @return bool
-     */
-    public function remove($content)
-    {
-        R::trash($content);
-        return true;
     }
 
     /**
@@ -354,5 +371,14 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
 //| Custom methods                                                                  |
 //|---------------------------------------------------------------------------------|
 
+    /**
+     * @param $content
+     * @return bool
+     */
+    public function remove($content)
+    {
+        R::trash($content);
+        return true;
+    }
 
 }

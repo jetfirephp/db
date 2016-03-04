@@ -17,7 +17,12 @@ class DoctrineConstructor
     /**
      * @var EntityManager
      */
-    public $em;
+    protected $em;
+
+    /**
+     * @var
+     */
+    protected $options;
 
     /**
      * @param array $options
@@ -26,6 +31,7 @@ class DoctrineConstructor
      */
     public function __construct($options = [])
     {
+        $this->options = $options;
         $isDevMode = (isset($options['dev']) && $options['dev']) ? true : false;
         if (isset($options['db_url'])) {
             $dbParams = array(

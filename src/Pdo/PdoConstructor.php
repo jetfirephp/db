@@ -14,7 +14,15 @@ class PdoConstructor
     /**
      * @var PDO
      */
-    public $pdo;
+    protected $pdo;
+    /**
+     * @var
+     */
+    protected $prefix;
+    /**
+     * @var
+     */
+    protected $options;
 
     /**
      * @param $options
@@ -22,10 +30,11 @@ class PdoConstructor
      */
     public function __construct($options)
     {
-        if (!isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
+        $this->options = $options;
+        if (!isset($options['driver']) || !isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
             throw new \Exception('Missing arguments for PDO constructor');
-
-        $this->pdo = new PDO('mysql:host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
+        $this->prefix = isset($options['prefix'])?$options['prefix']:'';
+        $this->pdo = new PDO($options['driver'].':host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
     }
 
 } 

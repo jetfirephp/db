@@ -14,7 +14,11 @@ class RedBeanConstructor
     /**
      * @var
      */
-    public $prefix;
+    protected $prefix;
+    /**
+     * @var
+     */
+    protected $options;
 
     /**
      * @param $options
@@ -22,8 +26,9 @@ class RedBeanConstructor
      */
     public function __construct($options)
     {
+        $this->options = $options;
         if (!isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
-            throw new \Exception('Missing arguments for doctrine constructor');
+            throw new \Exception('Missing arguments for RedBean constructor');
         if (isset($options['prefix']))
             $this->prefix = $options['prefix'];
         R::setAutoResolve(TRUE);

@@ -27,17 +27,16 @@ interface ModelInterface
     public function getOrm();
 
     /**
+     * @return mixed
+     */
+    public function repo();
+
+    /**
      * @param $sql
      * @param array $params
      * @return mixed
      */
     public function sql($sql, $params = []);
-
-    /**
-     * @param $query
-     * @return mixed
-     */
-    public function query($query);
 
     /**
      * @return mixed
@@ -134,12 +133,6 @@ interface ModelInterface
      * @return mixed
      */
     public function delete();
-
-    /**
-     * @param $content
-     * @return mixed
-     */
-    public function remove($content);
 
     /**
      * @return mixed

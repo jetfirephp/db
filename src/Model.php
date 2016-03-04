@@ -42,7 +42,7 @@ class Model
     public static function getInstance()
     {
         if (self::$instance === null)
-            self::$instance = new self;
+            self::$instance = new self::$orm->class;
         return self::$instance;
     }
 
@@ -91,6 +91,14 @@ class Model
     }
 
     /**
+     * @return Model|null
+     */
+    public static function repo(){
+        $repo = self::$orm->repo();
+        return is_null($repo)?self::getInstance():$repo;
+    }
+
+    /**
      * @param $name
      * @param $args
      * @return mixed
@@ -107,7 +115,7 @@ class Model
      */
     public function __call($name, $args)
     {
-        return self::call($name, $args);
+        return $this->call($name, $args);
     }
 
     /**
