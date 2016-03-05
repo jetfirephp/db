@@ -86,12 +86,13 @@ interface ModelInterface
     public function orderBy($value, $order = 'ASC');
 
     /**
-     * @param $value
+     * @param $limit
+     * @param null $first
      * @param bool $single
      * @internal param bool $array
      * @return mixed
      */
-    public function take($value, $single = false);
+    public function take($limit,$first = null,$single = false);
 
     /**
      * @param bool $single
@@ -105,11 +106,11 @@ interface ModelInterface
     public function count();
 
     /**
-     * @param null $id
+     * @param int|string $id
      * @param null $contents
      * @return mixed
      */
-    public function update($id = null, $contents = null);
+    public function update($id, $contents = null);
 
     /**
      * @param $contents

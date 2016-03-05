@@ -53,11 +53,11 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
 
     public function offsetSet($offset, $value)
     {
-        // TODO: Implement offsetSet() method.
+        $this->table[$offset] = $value;
     }
 
     public function offsetUnset($offset)
     {
-
+        unset($this->table[$offset]);
     }
 }

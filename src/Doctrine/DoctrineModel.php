@@ -6,6 +6,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
 use JetFire\Db\IteratorResult;
 use JetFire\Db\ModelInterface;
+use JetFire\Db\String;
 
 /**
  * Class DoctrineModel
@@ -15,51 +16,46 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
 {
 
     /**
+     * @description called class name
      * @var
      */
     public $class;
     /**
-     * @var
-     */
-    private $entity;
-    /**
+     * @description the table name in the database
      * @var
      */
     private $table;
     /**
+     * @description table alias
      * @var
      */
     private $alias;
     /**
+     * @description sql query
      * @var
      */
     private $sql;
     /**
+     * @description sql parameters
      * @var array
      */
     private $params = [];
-
     /**
+     * @description called class instance
      * @var
      */
     private $instance;
 
     /**
-     * @return mixed
-     */
-    public function getInstance(){
-        if(is_null($this->instance))
-            $this->instance = new $this->class;
-        return $this->instance;
-    }
-
-    /**
-     * @param $class
+     * @param $table
      * @return $this
      */
-    public function setTable($class)
+    public function setTable($table)
     {
-        $this->class = $class;
+        $this->class = $table;
+        $class = explode('\\', $table);
+        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
+        $this->alias = strtolower(substr($end, 0, 1));
         return $this;
     }
 
@@ -68,25 +64,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function getTable()
     {
-        return $this->class;
-    }
-
-    /**
-     * @param bool $without_namespace
-     */
-    private function get_class_name($without_namespace = true)
-    {
-        if (is_null($this->table)) {
-            $class = $this->class;
-            if ($without_namespace) {
-                $class = explode('\\', $class);
-                end($class);
-                $last = key($class);
-                $class = $class[$last];
-            }
-            $this->table = $class;
-            $this->alias = strtolower(substr($class, 0, 1));
-        }
+        return $this->table;
     }
 
 //|---------------------------------------------------------------------------------|
@@ -148,8 +126,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function find($id)
     {
-        $this->entity = $this->em->find($this->class, $id);
-        return new DoctrineSingleResult($this->entity,function(){return $this->em();});
+        $this->instance = $this->em->find($this->class, $id);
+        return new DoctrineSingleResult($this->instance,function(){return $this->em();});
     }
 
 
@@ -158,7 +136,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function select()
     {
-        $this->get_class_name();
         $this->sql = 'SELECT';
         $args = func_get_args();
         if (count($args) == 0) $this->sql .= ' *,';
@@ -177,12 +154,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function where($key, $operator = null, $value = null, $boolean = "AND")
     {
-        $this->get_class_name();
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (empty($this->sql)) $this->sql = ' WHERE';
-     /*   if(is_null($operator) || strtolower($operator) == 'null' || (strtolower($operator) == 'is' && (strtolower($value) == 'null' || is_null($value))))
-            list($key, $operator, $value) = array($key, 'is', $operator);
-        else*/ if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
+        if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         // if we update or delete the entity
         if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
             if (is_null($this->sql->getParameter($key)))
@@ -239,29 +213,31 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     }
 
     /**
-     * @param $value
+     * @param $limit
+     * @param null $first
      * @param bool $single
      * @return array|mixed
      * @throws \Doctrine\ORM\NoResultException
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function take($value, $single = false)
+    public function take($limit,$first = null,$single = false)
     {
-        $this->get_class_name();
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
-        $query = $this->query($this->sql);
+        $result = $this->query($this->sql);
         if (!empty($this->params))
             foreach ($this->params as $key => $param) {
                 if (is_numeric($key))
-                    $query->setParameter($key + 1, $param);
+                    $result->setParameter($key + 1, $param);
                 else
-                    $query->setParameter($key, $param);
+                    $result->setParameter($key, $param);
             }
-        $query->setMaxResults($value);
-        $this->sql = '';
+        $result->setMaxResults($limit);
+        if(!is_null($first))$result->setFirstResult($first);
+        $this->sql = $this->table = null;
         $this->params = [];
-        $this->table = null;
-        return ($value == 1 && $single) ? new DoctrineSingleResult($query->getSingleResult(),function(){return $this->em();}) : new IteratorResult($query->getResult());
+        return ($limit == 1 && $single)
+            ? new DoctrineSingleResult($result->getSingleResult(),function(){return $this->em();})
+            : new IteratorResult($result->getResult(),'doctrine');
     }
 
 
@@ -273,22 +249,23 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function get($single = false)
     {
-        if(is_null($this->sql))return new DoctrineSingleResult($this->getInstance(),function(){return $this->em();});
-        $this->get_class_name();
+        // create a new instance of the table
+        if(is_null($this->sql))
+            return new DoctrineSingleResult(new $this->class,function(){return $this->em();});
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $query = $this->query($this->sql);
-        if (!empty($this->params))
-            foreach ($this->params as $key => $param) {
-                if (is_numeric($key))
-                    $query->setParameter($key + 1, $param);
-                else
-                    $query->setParameter($key, $param);
-            }
-        $this->sql = '';
+        foreach ($this->params as $key => $param) {
+            if (is_numeric($key))
+                $query->setParameter($key + 1, $param);
+            else
+                $query->setParameter($key, $param);
+        }
+        $this->sql = $this->table = null;
         $this->params = [];
-        $this->table = null;
         $result = $query->getResult();
-        return ($single || count($result) ==  1) ? new DoctrineSingleResult($result[0],function(){return $this->em();}) : new IteratorResult($result,'doctrine');
+        return ($single && count($result) ==  1)
+            ? new DoctrineSingleResult($result[0],function(){return $this->em();})
+            : new IteratorResult($result,'doctrine');
     }
 
     /**
@@ -296,10 +273,17 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function count()
     {
-        $this->get_class_name();
-        $last = (isset($this->sql)) ? $this->sql : '';
-        $this->sql = 'SELECT COUNT(' . $this->alias . ') FROM ' . $this->class . ' ' . $this->alias . ' ' . $last;
-        return $this;
+        $this->sql = 'SELECT COUNT(' . $this->alias . ') FROM ' . $this->class . ' ' . $this->alias . ' ' . $this->sql;
+        $query = $this->query($this->sql);
+        foreach ($this->params as $key => $param) {
+            if (is_numeric($key))
+                $query->setParameter($key + 1, $param);
+            else
+                $query->setParameter($key, $param);
+        }
+        $this->sql = $this->table = null;
+        $this->params = [];
+        return $query->getSingleResult()[1];
     }
 
 //|---------------------------------------------------------------------------------|
@@ -307,17 +291,15 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
 //|---------------------------------------------------------------------------------|
 
     /**
-     * @param null $id
+     * @param $id
      * @param null $contents
      * @return bool|DoctrineModel
      */
-    public function update($id = null, $contents = null)
+    public function update($id, $contents = null)
     {
-        $this->get_class_name();
         $qb = $this->queryBuilder();
         $this->sql = $qb->update($this->class, $this->alias);
-        if (!is_null($id))
-            $this->sql = $this->sql->where($qb->expr()->eq($this->alias . '.id', ':id'))->setParameter('id', $id);
+        $this->sql = $this->sql->where($qb->expr()->eq($this->alias . '.id', ':id'))->setParameter('id', $id);
         return (is_null($contents)) ? $this : $this->with($contents);
     }
 
@@ -336,8 +318,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
             }
         }
         $this->sql->getQuery()->execute();
-        $this->entity = null;
-        $this->sql = '';
+        $this->instance = $this->sql = null;
         $this->params = [];
         return true;
     }
@@ -348,7 +329,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function set($contents)
     {
-        $this->get_class_name();
         $update = 'UPDATE ' . $this->class . ' ' . $this->alias . ' SET';
         foreach ($contents as $key => $content) {
             $param = $key;
@@ -365,7 +345,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
                 else
                     $query->setParameter($key, $param);
             }
-        $this->sql = '';
+        $this->sql = null;
         $this->params = [];
         return (is_null($query->execute())) ? false : true;
     }
@@ -381,19 +361,19 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function create($contents = null)
     {
-        $this->entity = new $this->class;
-        if (is_null($contents)) return $this->entity;
+        $this->instance = new $this->class;
+        if (is_null($contents)) return $this->instance;
         $replace = ['-', '_', '.'];
         foreach ($contents as $key => $content) {
             $key = str_replace($replace, ' ', $key);
             $key = str_replace(' ', '', ucwords($key));
             $method = 'set' . $key;
-            if (method_exists($this->entity, $method))
-                $this->entity->$method($content);
+            if (method_exists($this->instance, $method))
+                $this->instance->$method($content);
         }
-        $this->em->persist($this->entity);
+        $this->em->persist($this->instance);
         $this->em->flush();
-        $this->entity = null;
+        $this->instance = null;
         return true;
     }
 
@@ -407,8 +387,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function delete()
     {
-        $this->get_class_name();
-        $this->sql = 'DELETE ' . $this->class . ' ' . $this->alias . $this->sql;
+        $this->sql = 'DELETE FROM' . $this->class . ' ' . $this->alias . $this->sql;
         $query = $this->query($this->sql);
         if (!empty($this->params))
             foreach ($this->params as $key => $param) {
@@ -417,7 +396,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
                 else
                     $query->setParameter($key, $param);
             }
-        $this->sql = '';
+        $this->sql = null;
         $this->params = [];
         return (is_null($query->execute())) ? false : true;
     }
@@ -428,7 +407,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function destroy()
     {
         $ids = func_get_args();
-        $this->get_class_name();
         $ids = array_pop($ids);
         $qb = $this->queryBuilder();
         foreach ($ids as $id)
@@ -455,7 +433,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
 //|---------------------------------------------------------------------------------|
 //| Custom methods                                                                  |
 //|---------------------------------------------------------------------------------|
-
     /**
      * @return \Doctrine\ORM\EntityManager
      */
@@ -478,8 +455,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function watch($entity = null)
     {
-        if (!is_null($entity)) $this->entity = $entity;
-        $this->em->persist($this->entity);
+        if (!is_null($entity)) $this->instance = $entity;
+        $this->em->persist($this->instance);
         return true;
     }
 
@@ -489,8 +466,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function watchAndSave($entity = null)
     {
-        if (!is_null($entity)) $this->entity = $entity;
-        $this->em->persist($this->entity);
+        if (!is_null($entity)) $this->instance = $entity;
+        $this->em->persist($this->instance);
         $this->em->flush();
         return true;
     }

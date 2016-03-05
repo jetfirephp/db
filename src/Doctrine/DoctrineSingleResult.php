@@ -61,6 +61,7 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
 
     public function offsetUnset($offset)
     {
-
+        $offset = 'set'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $this->table->$offset(NULL);
     }
 }

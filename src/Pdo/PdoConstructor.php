@@ -18,10 +18,6 @@ class PdoConstructor
     /**
      * @var
      */
-    protected $prefix;
-    /**
-     * @var
-     */
     protected $options;
 
     /**
@@ -33,7 +29,6 @@ class PdoConstructor
         $this->options = $options;
         if (!isset($options['driver']) || !isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
             throw new \Exception('Missing arguments for PDO constructor');
-        $this->prefix = isset($options['prefix'])?$options['prefix']:'';
         $this->pdo = new PDO($options['driver'].':host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
     }
 

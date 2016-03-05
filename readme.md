@@ -247,13 +247,14 @@ $account = Account::where('id',1)->where('last_name','Parker')->get();
 // or
 $account = Account::whereRaw('a.id = :id AND a.last_name = :last_name',['id' => 1, 'last_name' => 'Parker'])->get();
 // select only some fields
-$account = Account::select('id','first_name')->where('id',1)->where('last_name','Parker)->get(); // return only id and first_name
+$account = Account::select('id','first_name')->where('id',1)->where('last_name','Parker')->get(); // return only id and first_name
 // order by
 $account = Account::orderBy('id','DESC')->get(); 
 // count
 $account = Account::where('last_name','Parker')->count(); // return 1
 // limit row
 $account = Account::take(2); // return only the first 2 accounts
+$account = Account::take(2,3); // return the 2 accounts after 3 rows
 ```
 
 And to read the model data :
@@ -276,7 +277,7 @@ Account::update(1)->with([
      'first_name' => 'Peter 2',
 ]);
 ```
-2) Update with specif parameters
+2) Update with conditions
 ```php
 Account::where('id',1)->where('id',2)->set(['first_name' => 'Peter 2']);
 ```

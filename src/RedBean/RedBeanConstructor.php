@@ -14,10 +14,6 @@ class RedBeanConstructor
     /**
      * @var
      */
-    protected $prefix;
-    /**
-     * @var
-     */
     protected $options;
 
     /**
@@ -29,8 +25,6 @@ class RedBeanConstructor
         $this->options = $options;
         if (!isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
             throw new \Exception('Missing arguments for RedBean constructor');
-        if (isset($options['prefix']))
-            $this->prefix = $options['prefix'];
         R::setAutoResolve(TRUE);
         ($options['driver'] == 'sqlite')
             ? R::setup('sqlite:/tmp/dbfile.db')

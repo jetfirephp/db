@@ -29,29 +29,15 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     /**
      * @var
      */
-    private $calledTable;
-    /**
-     * @var
-     */
     private $sql;
     /**
      * @var array
      */
     private $params = [];
-
     /**
      * @var
      */
     private $instance;
-
-    /**
-     * @return mixed
-     */
-    public function getInstance(){
-        if(is_null($this->instance))
-            $this->instance = new $this->class;
-        return $this->instance;
-    }
 
     /**
      * @param $table
@@ -61,7 +47,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = $this->prefix . String::pluralize(strtolower($end = end($class)));
+        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
         $this->alias = strtolower(substr($end, 0, 1));
         return $this;
     }
@@ -178,16 +164,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (empty($this->sql)) $this->sql = ' WHERE';
         if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
-        // if we update or delete the entity
-        /* if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
-             if (is_null($this->sql->getParameter($key)))
-                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key")->setParameter($key, $value);
-             else
-                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key" . '_' . $value)->setParameter($key . '_' . $value, $value);
-             return $this;
-         }*/
-
-        //if we read the entity
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
@@ -229,18 +205,23 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function orderBy($value, $order = 'ASC')
     {
-        $this->sql .= ' ORDER BY ' . $value . ' ' . $order;
+        $this->sql .= ' ORDER BY ' .$this->alias.'.'. $value . ' ' . $order;
         return $this;
     }
 
 
-    /**
-     * @param $value
-     * @param bool $single
-     */
-    public function take($value, $single = false)
+    public function take($limit,$first = null,$single = false)
     {
-        // TODO: Implement take() method.
+        if(is_null($this->sql))
+            $this->sql = 'SELECT * FROM ' . $this->table . ' '. $this->alias;
+        $this->sql .= ' LIMIT '.$limit;
+        if(!is_null($first))$this->sql .= ' OFFSET '.$first;
+        $result = $this->execQuery($this->sql,$this->params);
+        $this->sql = null;
+        $this->params = [];
+        return ($single && count($result) == 1)
+            ? new RedBeanSingleResult($result)
+            : $result;
     }
 
     /**
@@ -249,20 +230,25 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function get($single = false)
     {
-        if(is_null($this->sql))return new RedBeanSingleResult(R::xdispense($this->table));
+        if(is_null($this->sql))
+            return new RedBeanSingleResult(R::xdispense($this->table));
         $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' '. $this->alias . $this->sql : $this->sql;
-        $query = $this->execQuery($this->sql, $this->params);
-        $this->sql = '';
+        $result = $this->execQuery($this->sql, $this->params);
+        $this->sql = null;
         $this->params = [];
-        return ($single || count($query) == 1) ? new RedBeanSingleResult($query[0]) : new IteratorResult($query,'redbean');
+        return ($single && count($result) == 1)
+            ? new RedBeanSingleResult($result[0])
+            : $result;
     }
 
-    /**
-     *
-     */
     public function count()
     {
-        // TODO: Implement count() method.
+        if(is_null($this->sql))
+            return R::count($this->table);
+        $this->sql = 'SELECT COUNT(*) FROM ' . $this->table . ' ' .$this->alias. $this->sql;
+        $result = R::getCell($this->sql, $this->params);
+        $this->sql = null;
+        return $result;
     }
 
 //|---------------------------------------------------------------------------------|
@@ -270,14 +256,13 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
 //|---------------------------------------------------------------------------------|
 
     /**
-     * @param null $id
+     * @param int|string $id
      * @param null $contents
      * @return bool|RedBeanModel
      */
-    public function update($id = null, $contents = null)
+    public function update($id, $contents = null)
     {
-        if (!is_null($id))
-            $this->calledTable = R::load($this->table, $id);
+        $this->instance = R::load($this->table, $id);
         return (is_null($contents)) ? $this : $this->with($contents);
     }
 
@@ -287,10 +272,10 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function with($contents)
     {
-        if (!is_null($this->calledTable)) {
+        if (!is_null($this->instance)) {
             foreach ($contents as $key => $content)
-                $this->calledTable[$key] = $content;
-            R::store($this->calledTable);
+                $this->instance[$key] = $content;
+            R::store($this->instance);
             return true;
         }
         return false;
@@ -321,12 +306,8 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function create($contents = null)
     {
-        $table = R::xdispense($this->table);
-        if (!is_null($contents))
-            foreach ($contents as $key => $content) {
-                $table[$key] = $content;
-            }
-        return R::store($table);
+        $this->instance = R::xdispense($this->table);
+        return is_null($contents)?$this:$this->with($contents);
     }
 
 
@@ -336,19 +317,27 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
 
 
     /**
-     *
+     * @return array|int
      */
     public function delete()
     {
-        // TODO: Implement delete() method.
+        $this->sql = 'DELETE FROM' . $this->table . ' '. $this->sql;
+        $query = $this->execQuery($this->sql, $this->params);
+        $this->sql = null;
+        $this->params = [];
+        return $query;
     }
 
+
     /**
-     *
+     * @return bool
      */
     public function destroy()
     {
-        // TODO: Implement destroy() method.
+        $ids = func_get_args();
+        foreach ($ids as $id)
+            R::trash($this->find($id));
+        return true;
     }
 
 //|---------------------------------------------------------------------------------|
@@ -372,12 +361,12 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
 //|---------------------------------------------------------------------------------|
 
     /**
-     * @param $content
+     * @param $table
      * @return bool
      */
-    public function remove($content)
+    public function remove($table)
     {
-        R::trash($content);
+        R::trash($table);
         return true;
     }
 

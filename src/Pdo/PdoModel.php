@@ -35,7 +35,6 @@ class PdoModel extends PdoConstructor implements ModelInterface
      * @var array
      */
     public $params = [];
-
     /**
      * @var
      */
@@ -50,7 +49,6 @@ class PdoModel extends PdoConstructor implements ModelInterface
         return $this->instance;
     }
 
-
     /**
      * @param $table
      * @return $this
@@ -59,7 +57,7 @@ class PdoModel extends PdoConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = $this->prefix . String::pluralize(strtolower($end = end($class)));
+        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
         $this->alias = strtolower(substr($end, 0, 1));
         return $this;
     }
@@ -156,16 +154,6 @@ class PdoModel extends PdoConstructor implements ModelInterface
         if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (empty($this->sql)) $this->sql = ' WHERE';
         if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
-        // if we update or delete the entity
-        /* if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
-             if (is_null($this->sql->getParameter($key)))
-                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key")->setParameter($key, $value);
-             else
-                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key" . '_' . $value)->setParameter($key . '_' . $value, $value);
-             return $this;
-         }*/
-
-        //if we read the entity
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
@@ -212,14 +200,25 @@ class PdoModel extends PdoConstructor implements ModelInterface
     }
 
     /**
-     * @param $value
+     * @param $limit
+     * @param null $first
      * @param bool $single
      * @internal param bool $array
      * @return mixed
      */
-    public function take($value, $single = false)
+    public function take($limit,$first = null, $single = false)
     {
-        // TODO: Implement take() method.
+        if(is_null($this->sql))
+            $this->sql = 'SELECT * FROM ' . $this->table . ' '. $this->alias;
+        $this->sql .= ' LIMIT '.$limit;
+        if(!is_null($first))$this->sql .= ' OFFSET '.$first;
+        $result = $this->execQuery($this->sql,$this->params);
+        $result = $result->fetchAll(PDO::FETCH_OBJ);
+        $this->sql = null;
+        $this->params = [];
+        return ($single && count($result) == 1)
+            ? new PdoSingleResult($result[0],function(){return $this;})
+            : new IteratorResult($result);
     }
 
     /**
@@ -230,19 +229,9 @@ class PdoModel extends PdoConstructor implements ModelInterface
     {
         if(is_null($this->sql))return new PdoSingleResult($this->getInstance(),function(){return $this;});
         $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' ' . $this->alias .$this->sql : $this->sql;
-        $query = $this->pdo->prepare($this->sql);
-        foreach($this->params as $key => $value) {
-            if(is_int($value))
-                $query->bindValue($key, $value,PDO::PARAM_INT);
-            elseif(is_string($value))
-                $query->bindValue($key, $value,PDO::PARAM_STR);
-            else
-                $query->bindValue($key, $value);
-        }
-        $query->execute();
-        $this->sql = '';
-        $this->params = [];
-        $result = $query->fetchAll(PDO::FETCH_OBJ);
+        $result = $this->execQuery($this->sql,$this->params);
+        $this->sql = null;$this->params = [];
+        $result = $result->fetchAll(PDO::FETCH_OBJ);
         return ($single || count($result) == 1) ? new PdoSingleResult($result[0],function(){return $this;}) : new IteratorResult($result);
     }
 
@@ -251,17 +240,22 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function count()
     {
-        // TODO: Implement count() method.
+        $this->sql = 'SELECT COUNT(*) FROM ' . $this->table . ' ' .$this->alias. $this->sql;
+        $result = $this->execQuery($this->sql,$this->params);
+        $this->sql = null;$this->params = [];
+        return $result->fetch()[0];
     }
 
     /**
-     * @param null $id
+     * @param int|string $id
      * @param null $contents
      * @return mixed
      */
-    public function update($id = null, $contents = null)
+    public function update($id, $contents = null)
     {
-        // TODO: Implement update() method.
+        $this->sql = 'WHERE id = :id';
+        $this->params['id'] = $id;
+        return (is_null($contents))?$this:$this->add($contents);
     }
 
     /**
@@ -270,7 +264,9 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function with($contents)
     {
-        // TODO: Implement with() method.
+        return (substr($this->sql, 0, -5) == 'WHERE')
+            ? $this->add($contents)
+            : $this->insert($contents);
     }
 
     /**
@@ -279,7 +275,16 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function set($contents)
     {
-        // TODO: Implement set() method.
+        $sql = '';
+        foreach($contents as $key => $value)
+            $sql .= $key.' = :'.$key.',';
+        $result = $this->pdo->prepare('UPDATE '.$this->table.' SET '.substr($sql, 0, -1).$this->sql);
+        $this->params = array_merge($contents,$this->params);
+        foreach($this->params as $key => $value)
+            $result->bindValue($key,$value);
+        $this->sql = null;
+        $this->params = [];
+        return $result->execute();
     }
 
     /**
@@ -288,7 +293,7 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function create($contents = null)
     {
-        // TODO: Implement create() method.
+        return is_null($contents)?$this:$this->insert($contents);
     }
 
     /**
@@ -296,7 +301,11 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function delete()
     {
-        // TODO: Implement delete() method.
+        $this->sql = 'DELETE FROM' . $this->table . ' '. $this->sql;
+        $query = $this->execQuery($this->sql, $this->params);
+        $this->sql = null;
+        $this->params = [];
+        return $query;
     }
 
     /**
@@ -304,7 +313,21 @@ class PdoModel extends PdoConstructor implements ModelInterface
      */
     public function destroy()
     {
-        // TODO: Implement destroy() method.
+        $ids = func_get_args();
+        $sql = 'DELETE FROM '.$this->table.' WHERE id IN (';
+        $params = [];
+        foreach ($ids as $key => $id) {
+            $sql .= '?,';
+            $params[] = $id;
+        }
+        $result = $this->pdo->prepare(substr($sql,0,-1).')');
+        foreach($params as $key => $value)
+            $result->bindValue($key,$value,PDO::PARAM_INT);
+        return $result->execute();
+    }
+
+    public function clear(){
+        return $this->pdo->exec('TRUNCATE TABLE '.$this->table);
     }
 
     /**
@@ -317,5 +340,44 @@ class PdoModel extends PdoConstructor implements ModelInterface
         if (method_exists($this, $name))
             return call_user_func_array([$this, $name], $args);
         return call_user_func_array([$this->getOrm(), $name], $args);
+    }
+
+    public function add($contents){
+        $sql = '';
+        foreach($contents as $key => $value)
+            $sql .= $key.' = :'.$key.',';
+        $result = $this->pdo->prepare('UPDATE '.$this->table.' SET '.substr($sql, 0, -1).' '.$this->sql);
+        foreach($contents as $key => $value)
+            $result->bindValue($key,$value);
+        $result->bindValue('id',$this->params['id'],PDO::PARAM_INT);
+        $this->sql = '';
+        $this->params = [];
+        return $result->execute();
+    }
+
+    public function insert($contents){
+        $values = '';
+        foreach($contents as $key => $value) {
+            $this->sql .= $key . ',';
+            $values .= ':'.$key.',';
+        }
+        $result = $this->pdo->prepare('INSERT INTO '.$this->table.'('.substr($this->sql, 0, -1).') VALUES ('.substr($values,0,-1).')');
+        foreach($contents as $key => $value)
+            $result->bindValue($key,$value);
+        return $result->execute();
+    }
+
+    private function execQuery($sql,$params = []){
+        $query = $this->pdo->prepare($sql);
+        foreach($params as $key => $value) {
+            if(is_int($value))
+                $query->bindValue($key, $value,PDO::PARAM_INT);
+            elseif(is_string($value))
+                $query->bindValue($key, $value,PDO::PARAM_STR);
+            else
+                $query->bindValue($key, $value);
+        }
+        $query->execute();
+        return $query;
     }
 }
