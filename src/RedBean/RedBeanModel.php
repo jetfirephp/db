@@ -104,18 +104,6 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         return $this->execQuery($sql, $params);
     }
 
-    /**
-     * @param $sql
-     * @param $params
-     * @return array|int
-     */
-    private function execQuery($sql, $params)
-    {
-        return (strtolower(substr($sql, 0, 6)) === 'select')
-            ? new IteratorResult(R::getAll($sql, $params),'redbean')
-            : R::exec($sql, $params);
-    }
-
 
 //|---------------------------------------------------------------------------------|
 //| Reading method are managed here                                                 |
@@ -216,12 +204,12 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
             $this->sql = 'SELECT * FROM ' . $this->table . ' '. $this->alias;
         $this->sql .= ' LIMIT '.$limit;
         if(!is_null($first))$this->sql .= ' OFFSET '.$first;
-        $result = $this->execQuery($this->sql,$this->params);
+        $result = R::getAll($this->sql,$this->params);
         $this->sql = null;
         $this->params = [];
         return ($single && count($result) == 1)
             ? new RedBeanSingleResult($result)
-            : $result;
+            : new IteratorResult($result,'redbean');
     }
 
     /**
@@ -233,12 +221,12 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         if(is_null($this->sql))
             return new RedBeanSingleResult(R::xdispense($this->table));
         $this->sql = (substr($this->sql, 0, 6) !== 'SELECT') ? 'SELECT * FROM ' . $this->table . ' '. $this->alias . $this->sql : $this->sql;
-        $result = $this->execQuery($this->sql, $this->params);
+        $result = R::getAll($this->sql, $this->params);
         $this->sql = null;
         $this->params = [];
         return ($single && count($result) == 1)
             ? new RedBeanSingleResult($result[0])
-            : $result;
+            : new IteratorResult($result,'redbean');
     }
 
     public function count()
@@ -321,8 +309,8 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function delete()
     {
-        $this->sql = 'DELETE FROM' . $this->table . ' '. $this->sql;
-        $query = $this->execQuery($this->sql, $this->params);
+        $this->sql = 'DELETE FROM ' . $this->table . ' '. $this->sql;
+        $query = R::exec($this->sql, $this->params);
         $this->sql = null;
         $this->params = [];
         return $query;
@@ -370,4 +358,15 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         return true;
     }
 
+    /**
+     * @param $sql
+     * @param $params
+     * @return array|int
+     */
+    private function execQuery($sql, $params)
+    {
+        return (strtolower(substr($sql, 0, 6)) === 'select')
+            ? new IteratorResult(R::getAll($sql, $params),'redbean')
+            : R::exec($sql, $params);
+    }
 }
