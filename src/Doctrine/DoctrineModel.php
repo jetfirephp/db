@@ -450,6 +450,14 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     }
 
     /**
+     * @param $query
+     * @return Query
+     */
+    public function query($query)
+    {
+        return $this->em->createQuery($query);
+    }
+    /**
      * @param null $entity
      * @return bool
      */
@@ -491,14 +499,4 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->em->flush();
         return true;
     }
-
-    /**
-     * @param $query
-     * @return Query
-     */
-    public function query($query)
-    {
-        return $this->em->createQuery($query);
-    }
-
 } 

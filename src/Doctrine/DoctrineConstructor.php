@@ -6,6 +6,10 @@ use Doctrine\Common\EventManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
+use InvalidArgumentException;
+use Memcache;
+use Memcached;
+use Redis;
 
 /**
  * Class DoctrineConstructor
@@ -14,6 +18,7 @@ use Doctrine\ORM\Tools\Setup;
 class DoctrineConstructor
 {
 
+    public $cacheDriver;
     /**
      * @var EntityManager
      */
@@ -23,6 +28,15 @@ class DoctrineConstructor
      * @var
      */
     protected $options;
+
+    private $cacheProviders = [
+        'Doctrine\Common\Cache\ArrayCache' => 'getCache',
+        'Doctrine\Common\Cache\ApcCache' => 'getCache',
+        'Doctrine\Common\Cache\XcacheCache' => 'getCache',
+        'Doctrine\Common\Cache\MemcacheCache' => 'getMemcache',
+        'Doctrine\Common\Cache\MemcachedCache' => 'getMemcached',
+        'Doctrine\Common\Cache\RedisCache' => 'getRedis',
+    ];
 
     /**
      * @param array $options
@@ -58,5 +72,51 @@ class DoctrineConstructor
         $this->em = EntityManager::create($dbParams, $config, $evm);
     }
 
+    public function configCache($params = []){
+        $config = new \Doctrine\ORM\Configuration();
+        if(!isset($driver['use']))
+            throw new InvalidArgumentException('Cache class is not defined');
+        $this->cacheDriver = call_user_func_arrray([$this,$this->cacheProviders[$params['use']]],[$params]);
+        $config->setQueryCacheImpl($this->cacheDriver);
+        $config->setResultCacheImpl($this->cacheDriver);
+        $config->setMetadataCacheImpl($this->cacheDriver);
+    }
 
+    private function getCache($driver){
+        return new $driver['use'];
+    }
+
+    /**
+     * @param $driver
+     * @return \Doctrine\Common\Cache\MemcacheCache
+     */
+    private function getMemcache($driver){
+         $memcache = new Memcache();
+         if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
+             throw new InvalidArgumentException('Arguments for memcache driver missing');
+         $memcache->connect($driver['args'][0],$driver['args'][1]);
+         $driver = new $driver['use'];
+         $driver->setMemcache($memcache);
+         return $driver;
+     }
+
+    private function getMemcached($driver){
+        $memcached = new Memcached();
+        if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
+            throw new InvalidArgumentException('Arguments for memcached driver missing');
+        $memcached->addServer($driver['args'][0],$driver['args'][1]);
+        $driver = new $driver['use'];
+        $driver->setMemcached($memcached);
+        return $driver;
+    }
+
+    private function getRedis($driver){
+        $redis = new Redis();
+        if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
+            throw new InvalidArgumentException('Arguments for memcached driver missing');
+        $redis->connect($driver['args'][0],$driver['args'][1]);
+        $driver = new $driver['use'];
+        $driver->setRedis($redis);
+        return $driver;
+    }
 }
