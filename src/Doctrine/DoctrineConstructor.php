@@ -74,7 +74,7 @@ class DoctrineConstructor
 
     public function configCache($params = []){
         $config = new \Doctrine\ORM\Configuration();
-        if(!isset($driver['use']))
+        if(!isset($params['use']))
             throw new InvalidArgumentException('Cache class is not defined');
         $this->cacheDriver = call_user_func_arrray([$this,$this->cacheProviders[$params['use']]],[$params]);
         $config->setQueryCacheImpl($this->cacheDriver);
