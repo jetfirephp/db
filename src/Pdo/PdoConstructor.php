@@ -31,5 +31,4 @@ class PdoConstructor
             throw new \Exception('Missing arguments for PDO constructor');
         $this->pdo = new PDO($options['driver'].':host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
     }
-
 } 

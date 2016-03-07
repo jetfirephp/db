@@ -326,6 +326,9 @@ class PdoModel extends PdoConstructor implements ModelInterface
         return $result->execute();
     }
 
+    /**
+     * @return int
+     */
     public function clear(){
         return $this->pdo->exec('TRUNCATE TABLE '.$this->table);
     }
@@ -342,6 +345,10 @@ class PdoModel extends PdoConstructor implements ModelInterface
         return call_user_func_array([$this->getOrm(), $name], $args);
     }
 
+    /**
+     * @param $contents
+     * @return bool
+     */
     public function add($contents){
         $sql = '';
         foreach($contents as $key => $value)
@@ -355,6 +362,10 @@ class PdoModel extends PdoConstructor implements ModelInterface
         return $result->execute();
     }
 
+    /**
+     * @param $contents
+     * @return bool
+     */
     public function insert($contents){
         $values = '';
         foreach($contents as $key => $value) {
@@ -367,6 +378,11 @@ class PdoModel extends PdoConstructor implements ModelInterface
         return $result->execute();
     }
 
+    /**
+     * @param $sql
+     * @param array $params
+     * @return \PDOStatement
+     */
     private function execQuery($sql,$params = []){
         $query = $this->pdo->prepare($sql);
         foreach($params as $key => $value) {

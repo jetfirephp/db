@@ -21,6 +21,16 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
         $em->flush();
     }
 
+    public function persist(){
+        $em = call_user_func($this->em);
+        $em->persist($this->table);
+    }
+
+    public function flush(){
+        $em = call_user_func($this->em);
+        $em->flush();
+    }
+
     public function delete(){
         $em = call_user_func($this->em);
         $em->remove($this->table);

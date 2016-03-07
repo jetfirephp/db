@@ -4,27 +4,49 @@ namespace JetFire\Db\Pdo;
 
 use ArrayAccess;
 use JetFire\Db\ResultInterface;
-use PDO;
 
+/**
+ * Class PdoSingleResult
+ * @package JetFire\Db\Pdo
+ */
 class PdoSingleResult implements ResultInterface,ArrayAccess {
 
+    /**
+     * @var
+     */
     private $table;
+    /**
+     * @var null
+     */
     private $orm;
 
+    /**
+     * @var string
+     */
     private $type;
 
+    /**
+     * @param $table
+     * @param null $orm
+     */
     public function __construct($table,$orm = null){
         $this->table = $table;
         if(isset($this->table->id))$this->type = 'update';
         if(!is_null($orm)) $this->orm = $orm;
     }
 
+    /**
+     * @return mixed|null
+     */
     private function getOrm(){
         if(is_callable($this->orm))
             $this->orm = call_user_func($this->orm);
         return $this->orm;
     }
 
+    /**
+     * @return mixed
+     */
     public function save(){
         $orm = $this->getOrm();
         if($this->type == 'update'){
@@ -35,18 +57,34 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
         return $orm->insert($orm->params);
     }
 
+    /**
+     * @return mixed
+     */
     public function delete(){
         return $this->getOrm()->destroy($this->table->id);
     }
 
+    /**
+     * @param $offset
+     * @param $value
+     */
     public function __set($offset,$value){
         $this->getOrm()->params[$offset] = $value;
     }
 
+    /**
+     * @param $offset
+     * @return mixed
+     */
     public function __get($offset){
         return $this->table->$offset;
     }
 
+    /**
+     * @param $offset
+     * @param $args
+     * @return null
+     */
     public function __call($offset,$args){
         if(substr( $offset, 0, 3 ) == 'get') {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('get', '', $offset)));
@@ -58,21 +96,36 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
         return null;
     }
 
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
     public function offsetExists($offset)
     {
         return !is_null($this->table->$offset);
     }
 
+    /**
+     * @param mixed $offset
+     * @return mixed
+     */
     public function offsetGet($offset)
     {
         return $this->table->$offset;
     }
 
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
     public function offsetSet($offset, $value)
     {
         $this->getOrm()->params[$offset] = $value;
     }
 
+    /**
+     * @param mixed $offset
+     */
     public function offsetUnset($offset)
     {
         $this->getOrm()->params[$offset] = NULL;
