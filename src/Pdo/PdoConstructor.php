@@ -2,13 +2,14 @@
 
 namespace JetFire\Db\Pdo;
 
+use JetFire\Db\DbConstructorInterface;
 use PDO;
 
 /**
  * Class PdoConstructor
  * @package JetFire\Db\Pdo
  */
-class PdoConstructor
+class PdoConstructor implements DbConstructorInterface
 {
 
     /**
@@ -21,14 +22,40 @@ class PdoConstructor
     protected $options;
 
     /**
-     * @param $options
+     * @var array
+     */
+    private $db;
+
+    private $allDb = [];
+
+    /**
+     * @param array $db
      * @throws \Exception
      */
-    public function __construct($options)
+    public function __construct($db = [])
     {
-        $this->options = $options;
-        if (!isset($options['driver']) || !isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
-            throw new \Exception('Missing arguments for PDO constructor');
-        $this->pdo = new PDO($options['driver'].':host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
+        $this->db = $db;
+        foreach($this->db as $key => $db) {
+            if (!isset($db['driver']) || !isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
+                throw new \Exception('Missing arguments for PDO constructor');
+            $this->allDb[$key] = function()use($db){
+                return new PDO($db['driver'] . ':host=' . $db['host'] . ';dbname=' . $db['db'], $db['user'], $db['pass']);
+            };
+        }
     }
-} 
+
+    /**
+     * @param $name
+     * @return $this
+     * @throws \Exception
+     */
+    public function setDb($name)
+    {
+        $this->options = $this->db[$name];
+        if(is_callable($this->allDb[$name]))
+            $this->allDb[$name] = call_user_func($this->allDb[$name]);
+        $this->pdo = $this->allDb[$name];
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $name;
+    }
+}

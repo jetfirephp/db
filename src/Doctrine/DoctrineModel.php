@@ -54,8 +54,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
-        $this->alias = strtolower(substr($end, 0, 1));
+        $class = end($class);
+        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . String::pluralize(strtolower($class)):String::pluralize(strtolower($class));
+        $this->alias = strtolower(substr($class, 0, 1));
         return $this;
     }
 

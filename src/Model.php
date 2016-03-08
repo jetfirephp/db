@@ -2,11 +2,6 @@
 
 namespace JetFire\Db;
 
-
-/**
- * Class Model
- * @package JetFire\Db
- */
 /**
  * Class Model
  * @package JetFire\Db
@@ -21,31 +16,29 @@ class Model
     /**
      * @var
      */
-    public static $defaultOrm;
+    public static $allOrm;
     /**
      * @var
      */
-    public static $allOrm;
+    public static $db;
+    /**
+     * @var
+     */
+    public static $default = [];
+    /**
+     * @var array
+     */
+    public static $provider = [];
+    /**
+     * @var
+     */
+    public static $class;
     /**
      * @var null
      */
     public static $instance = null;
 
-    /**
-     * @var array
-     */
-    public static $provider = [];
-
-    /**
-     * @return Model|null
-     */
-    public static function getInstance()
-    {
-        if (self::$instance === null)
-            self::$instance = new self::$orm->class;
-        return self::$instance;
-    }
-
+    private static $keepLast;
     /**
      * @param ModelInterface $orm
      */
@@ -56,25 +49,29 @@ class Model
 
     /**
      * @param array $provider
-     * @param null $default
+     * @param array $default
+     * @param bool $keepLast
      */
-    public static function provide($provider = [], $default = null)
+    public static function provide($provider = [], $default = [],$keepLast = false)
     {
         self::$provider = $provider;
         reset($provider);
-        self::$defaultOrm = (!is_null($default)) ? $default : key($provider);
+        self::$default['orm'] = (isset($default['orm'])) ? $default['orm'] : key($provider);
+        self::$default['db'] = (isset($default['db'])) ? $default['db'] : 'default';
+        self::$keepLast = $keepLast;
     }
 
     /**
-     * @param $table
+     * @param $class
      * @return Model|null
      */
-    public static function table($table)
+    public static function getInstance($class)
     {
-        if (is_null(self::$orm))
-            self::orm(self::$defaultOrm);
-        self::$orm->setTable($table);
-        return self::getInstance();
+        if (self::$class !== $class) {
+            self::$class = $class;
+            self::$instance = new self::$class;
+        }
+        return self::$instance;
     }
 
     /**
@@ -86,8 +83,31 @@ class Model
         if (!isset(self::$allOrm[$name]))
             self::$allOrm[$name] = call_user_func(self::$provider[$name]);
         self::$orm = self::$allOrm[$name];
-        self::$orm->setTable(get_called_class());
-        return self::getInstance();
+        return self::getInstance(get_called_class());
+    }
+
+    /**
+     * @param string $name
+     * @return Model|null
+     */
+    public static function db($name){
+        if (is_null(self::$orm))
+            self::orm(self::$default['orm']);
+        self::$db = self::$orm->setDb($name);
+        return self::getInstance(get_called_class());
+    }
+
+    /**
+     * @param $table
+     * @return Model|null
+     */
+    public static function table($table)
+    {
+        if (is_null(self::$orm))
+            self::orm(self::$default['orm']);
+        if (is_null(self::$db))
+            self::db(self::$default['db']);
+        return self::getInstance($table);
     }
 
     /**
@@ -95,7 +115,7 @@ class Model
      */
     public static function repo(){
         $repo = self::$orm->repo();
-        return is_null($repo)?self::getInstance():$repo;
+        return is_null($repo)?self::getInstance(get_called_class()):$repo;
     }
 
     /**
@@ -115,21 +135,25 @@ class Model
      */
     public function __call($name, $args)
     {
-        return $this->call($name, $args);
+        return self::call($name, $args);
     }
 
     /**
      * @param $name
      * @param $args
-     * @return mixed
+     * @return
      */
-    private static function call($name, $args)
-    {
-        if (is_null(self::$orm))
-            self::orm(self::$defaultOrm);
-        if (is_null(self::$orm->getTable()))
-            self::$orm->setTable(get_called_class());
-        return self::$orm->callStatic($name, $args);
+    private static function call($name,$args){
+        if(is_null(self::$class))
+            self::$class = get_called_class();
+        self::table(self::$class);
+        self::$orm->setTable(self::$class);
+        $call = self::$orm->callStatic($name, $args);
+        if(!self::$keepLast) {
+            self::$orm = null;
+            self::$db = null;
+        }
+        return $call;
     }
 
 } 

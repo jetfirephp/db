@@ -2,13 +2,14 @@
 
 namespace JetFire\Db\RedBean;
 
+use JetFire\Db\DbConstructorInterface;
 use RedBeanPHP\R;
 
 /**
  * Class RedBeanConstructor
  * @package JetFire\Db\RedBean
  */
-class RedBeanConstructor
+class RedBeanConstructor implements DbConstructorInterface
 {
 
     /**
@@ -16,24 +17,34 @@ class RedBeanConstructor
      */
     protected $options;
 
+    protected $db;
+
     /**
-     * @param $options
+     * @param array $db
      * @throws \Exception
      */
-    public function __construct($options)
+    public function __construct($db = [])
     {
-        $this->options = $options;
-        if (!isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
-            throw new \Exception('Missing arguments for RedBean constructor');
+        $this->db = $db;
+        foreach($this->db as $key => $db){
+            if (!isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
+                throw new \Exception('Missing arguments for RedBean constructor');
+            ($db['driver'] == 'sqlite')
+                ? R::addDatabase($key,'sqlite:/tmp/dbfile.db')
+                : R::addDatabase($key, $db['driver'] . ':host=' . $db['host'] . ';dbname=' . $db['db'], $db['user'], $db['pass']);
+        }
+    }
+
+    public function setDb($name)
+    {
+        $this->options = $this->db[$name];
         R::setAutoResolve(TRUE);
-        ($options['driver'] == 'sqlite')
-            ? R::setup('sqlite:/tmp/dbfile.db')
-            : R::setup($options['driver'] . ':host=' . $options['host'] . ';dbname=' . $options['db'], $options['user'], $options['pass']);
+        R::selectDatabase($name);
+        if (isset($this->options['dev']) && $this->options['dev'])
+            R::freeze(TRUE);
         R::ext('xdispense', function ($type) {
             return R::getRedBean()->dispense($type);
         });
-        if (isset($options['dev']) && $options['dev'])
-            R::freeze(TRUE);
+        return $name;
     }
-
-} 
+}

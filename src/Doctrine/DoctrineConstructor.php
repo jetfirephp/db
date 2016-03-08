@@ -2,121 +2,96 @@
 
 namespace JetFire\Db\Doctrine;
 
+use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\EventManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
-use InvalidArgumentException;
-use Memcache;
-use Memcached;
-use Redis;
+use JetFire\Db\DbConstructorInterface;
+
 
 /**
  * Class DoctrineConstructor
  * @package JetFire\Db\Doctrine
  */
-class DoctrineConstructor
+class DoctrineConstructor implements DbConstructorInterface
 {
 
-    public $cacheDriver;
     /**
      * @var EntityManager
      */
     protected $em;
-
     /**
      * @var
      */
     protected $options;
+    /**
+     * @var array
+     */
+    private $db;
 
-    private $cacheProviders = [
-        'Doctrine\Common\Cache\ArrayCache' => 'getCache',
-        'Doctrine\Common\Cache\ApcCache' => 'getCache',
-        'Doctrine\Common\Cache\XcacheCache' => 'getCache',
-        'Doctrine\Common\Cache\MemcacheCache' => 'getMemcache',
-        'Doctrine\Common\Cache\MemcachedCache' => 'getMemcached',
-        'Doctrine\Common\Cache\RedisCache' => 'getRedis',
-    ];
+    private $allDb;
 
     /**
-     * @param array $options
-     * @throws \Doctrine\ORM\ORMException
+     * @param array $db
      * @throws \Exception
      */
-    public function __construct($options = [])
+    public function __construct($db = [])
     {
-        $this->options = $options;
-        $isDevMode = (isset($options['dev']) && $options['dev']) ? true : false;
-        if (isset($options['db_url'])) {
-            $dbParams = array(
-                'url' => $options['db_url']
-            );
-        } else {
-            if (!isset($options['driver']) || !isset($options['user']) || !isset($options['pass']) || !isset($options['host']) || !isset($options['db']))
-                throw new \Exception('Missing arguments for doctrine constructor');
-            $dbParams = array(
-                'driver'   => ($options['driver'] === 'mysql') ? 'pdo_mysql' : $options['driver'],
-                'user'     => $options['user'],
-                'password' => $options['pass'],
-                'host'     => $options['host'],
-                'dbname'   => $options['db'],
-                'charset'  => isset($options['charset']) ? $options['charset'] : 'utf8',
-            );
+        $this->db = $db;
+        foreach($this->db as $key => $db) {
+            $this->allDb[$key] = function()use($db) {
+                $db['dev'] = (isset($db['dev']) && $db['dev']) ? true : false;
+                if (isset($db['db_url'])) {
+                    $dbParams = array(
+                        'url' => $db['db_url']
+                    );
+                } else {
+                    if (!isset($db['driver']) || !isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
+                        throw new \Exception('Missing arguments for doctrine constructor');
+                    $dbParams = array(
+                        'driver'   => ($db['driver'] === 'mysql') ? 'pdo_mysql' : $db['driver'],
+                        'user'     => $db['user'],
+                        'password' => $db['pass'],
+                        'host'     => $db['host'],
+                        'dbname'   => $db['db'],
+                        'charset'  => isset($db['charset']) ? $db['charset'] : 'utf8',
+                    );
+                }
+                $evm = new EventManager();
+                if (isset($db['prefix'])) {
+                    $tablePrefix = new TablePrefix($db['prefix']);
+                    $evm->addEventListener(Events::loadClassMetadata, $tablePrefix);
+                }
+                $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
+                return EntityManager::create($dbParams, $config, $evm);
+            };
         }
-        $evm = new EventManager();
-        if (isset($options['prefix'])) {
-            $tablePrefix = new TablePrefix($options['prefix']);
-            $evm->addEventListener(Events::loadClassMetadata, $tablePrefix);
-        }
-        $config = Setup::createAnnotationMetadataConfiguration($options['path'], $isDevMode);
-        $this->em = EntityManager::create($dbParams, $config, $evm);
-    }
-
-    public function configCache($params = []){
-        $config = new \Doctrine\ORM\Configuration();
-        if(!isset($params['use']))
-            throw new InvalidArgumentException('Cache class is not defined');
-        $this->cacheDriver = call_user_func_arrray([$this,$this->cacheProviders[$params['use']]],[$params]);
-        $config->setQueryCacheImpl($this->cacheDriver);
-        $config->setResultCacheImpl($this->cacheDriver);
-        $config->setMetadataCacheImpl($this->cacheDriver);
-    }
-
-    private function getCache($driver){
-        return new $driver['use'];
     }
 
     /**
-     * @param $driver
-     * @return \Doctrine\Common\Cache\MemcacheCache
+     * @param $name
+     * @return $this
+     * @throws \Exception
      */
-    private function getMemcache($driver){
-         $memcache = new Memcache();
-         if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
-             throw new InvalidArgumentException('Arguments for memcache driver missing');
-         $memcache->connect($driver['args'][0],$driver['args'][1]);
-         $driver = new $driver['use'];
-         $driver->setMemcache($memcache);
-         return $driver;
-     }
-
-    private function getMemcached($driver){
-        $memcached = new Memcached();
-        if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
-            throw new InvalidArgumentException('Arguments for memcached driver missing');
-        $memcached->addServer($driver['args'][0],$driver['args'][1]);
-        $driver = new $driver['use'];
-        $driver->setMemcached($memcached);
-        return $driver;
+    public function setDb($name){
+        $this->options = $this->db[$name];
+        if(is_callable($this->allDb[$name]))
+            $this->allDb[$name] = call_user_func($this->allDb[$name]);
+        $this->em = $this->allDb[$name];
+        return $name;
     }
 
-    private function getRedis($driver){
-        $redis = new Redis();
-        if(!isset($driver['args'][0]) || !isset($driver['args'][1]))
-            throw new InvalidArgumentException('Arguments for memcached driver missing');
-        $redis->connect($driver['args'][0],$driver['args'][1]);
-        $driver = new $driver['use'];
-        $driver->setRedis($redis);
-        return $driver;
+
+    /**
+     * @param Cache $driver
+     */
+    public function setCache(Cache $driver){
+        $config = new \Doctrine\ORM\Configuration();
+        $config->setQueryCacheImpl($driver);
+        $config->setResultCacheImpl($driver);
+        $config->setMetadataCacheImpl($driver);
     }
+
+
 }

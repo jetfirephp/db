@@ -47,8 +47,9 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
-        $this->alias = strtolower(substr($end, 0, 1));
+        $class = end($class);
+        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . String::pluralize(strtolower($class)):String::pluralize(strtolower($class));
+        $this->alias = strtolower(substr($class, 0, 1));
         return $this;
     }
 
@@ -155,8 +156,8 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
-            ? ' ' . "$param $operator :$key"
-            : ' ' . $boolean . ' ' . "$param $operator :$key";
+            ? ' ' . "$this->alias.$param $operator :$key"
+            : ' ' . $boolean . ' ' . "$this->alias.$param $operator :$key";
         $this->params[$key] = $value;
         return $this;
     }

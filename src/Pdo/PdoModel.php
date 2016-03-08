@@ -57,8 +57,9 @@ class PdoModel extends PdoConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $this->table = (!isset($this->options['prefix'])?:$this->options['prefix']) . String::pluralize(strtolower($end = end($class)));
-        $this->alias = strtolower(substr($end, 0, 1));
+        $class = end($class);
+        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . String::pluralize(strtolower($class)):String::pluralize(strtolower($class));
+        $this->alias = strtolower(substr($class, 0, 1));
         return $this;
     }
 
@@ -232,7 +233,7 @@ class PdoModel extends PdoConstructor implements ModelInterface
         $result = $this->execQuery($this->sql,$this->params);
         $this->sql = null;$this->params = [];
         $result = $result->fetchAll(PDO::FETCH_OBJ);
-        return ($single || count($result) == 1) ? new PdoSingleResult($result[0],function(){return $this;}) : new IteratorResult($result);
+        return ($single && count($result) == 1) ? new PdoSingleResult($result[0],function(){return $this;}) : new IteratorResult($result);
     }
 
     /**

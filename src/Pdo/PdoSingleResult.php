@@ -31,7 +31,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      */
     public function __construct($table,$orm = null){
         $this->table = $table;
-        if(isset($this->table->id))$this->type = 'update';
+        if(isset($this->table->id))$this->type = 'read';
         if(!is_null($orm)) $this->orm = $orm;
     }
 
@@ -49,7 +49,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      */
     public function save(){
         $orm = $this->getOrm();
-        if($this->type == 'update'){
+        if($this->type == 'read'){
             $orm->sql = 'WHERE id = :id';
             $orm->params['id'] = $this->table->id;
             return $orm->add($orm->params);

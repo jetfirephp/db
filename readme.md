@@ -62,7 +62,7 @@ $ composer require gabordemooij/redbean
  
 ```
 
-### Multiple ORM
+### Support Multiple ORM
 
 ```php
 // Require composer autoloader
@@ -70,13 +70,15 @@ require __DIR__ . '/vendor/autoload.php';
 
 // configuration
 $config = [
-    'driver' => 'mysql',
-    'host' => 'localhost',
-    'user' => 'root',
-    'pass' => '',
-    'db' => 'project',
-    'prefix' => 'jt_',
-    'path' => [__DIR__.'/']
+    'default' => [
+        'driver' => 'mysql',
+        'host' => 'localhost',
+        'user' => 'root',
+        'pass' => '',
+        'db' => 'project',
+        'prefix' => 'jt_',
+        'path' => [__DIR__.'/']
+    ]
 ];
 
 
@@ -92,7 +94,9 @@ $providers = [
         return new \JetFire\Db\Pdo\PdoModel($config);
     },
 ];
-JetFire\Db\Model::provide($providers);
+
+// pass the default orm in second argument or it will take the first given orm in providers
+JetFire\Db\Model::provide($providers,['orm'=>'pdo']);
 
 $account1 = Account::orm('doctrine')->select('lastName')->where('firstName','Peter')->get();
 $account2 = Account::orm('pdo')->select('lastName')->where('firstName','Peter')->get();
@@ -100,6 +104,54 @@ $account3 = Account::orm('redbean')->select('firstName','lastName')->where('firs
 
 // you can also omit the orm method. The model will load the first orm provided (here doctrine). To load another orm by default you have to add the orm key in second argument of provide method 
 $account3 = Account::select('firstName','lastName')->where('firstName','Peter')->orWhere('age','>',20)->get(); // will load doctrine orm
+```
+
+### Support Multiple Databases
+
+
+```php
+// Require composer autoloader
+require __DIR__ . '/vendor/autoload.php';
+
+// configuration
+$config = [
+    'db1' => [
+        'driver' => 'mysql',
+        'host' => 'localhost',
+        'user' => 'root',
+        'pass' => '',
+        'db' => 'project1',
+        'prefix' => 'jt1_',
+        'path' => [__DIR__.'/']
+    ],
+    'db2' => [
+        'driver' => 'mysql',
+        'host' => 'localhost',
+        'user' => 'root',
+        'pass' => '',
+        'db' => 'project2',
+        'prefix' => 'jt2_',
+        'path' => [__DIR__.'/']
+    ]
+];
+
+
+// set your orm provider
+$providers = [
+    'doctrine' => function()use($config){
+        return new \JetFire\Db\Doctrine\DoctrineModel($config);
+    },
+    'redbean' => function()use($config){
+        return new \JetFire\Db\RedBean\RedBeanModel($config);
+    },
+    'pdo' => function()use($config){
+        return new \JetFire\Db\Pdo\PdoModel($config);
+    },
+];
+JetFire\Db\Model::provide($providers,['orm' => 'pdo', 'db' => 'default']);
+
+$account = Account::orm('doctrine')->db('db1')->all(); 
+
 ```
 
 ### Usage
