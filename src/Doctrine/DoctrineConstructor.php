@@ -4,6 +4,7 @@ namespace JetFire\Db\Doctrine;
 
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\EventManager;
+use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
@@ -87,7 +88,7 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param Cache $driver
      */
     public function setCache(Cache $driver){
-        $config = new \Doctrine\ORM\Configuration();
+        $config = new Configuration();
         $config->setQueryCacheImpl($driver);
         $config->setResultCacheImpl($driver);
         $config->setMetadataCacheImpl($driver);
