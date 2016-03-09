@@ -40,11 +40,14 @@ class RedBeanConstructor implements DbConstructorInterface
         $this->options = $this->db[$name];
         R::setAutoResolve(TRUE);
         R::selectDatabase($name);
-        if (isset($this->options['dev']) && $this->options['dev'])
-            R::freeze(TRUE);
         R::ext('xdispense', function ($type) {
             return R::getRedBean()->dispense($type);
         });
         return $name;
+    }
+
+    public function setCache(){
+        R::$writer->setUseCache(true);
+        R::freeze(TRUE);
     }
 }
