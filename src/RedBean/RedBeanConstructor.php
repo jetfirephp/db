@@ -17,7 +17,15 @@ class RedBeanConstructor implements DbConstructorInterface
      */
     protected $options;
 
+    /**
+     * @var array
+     */
     protected $db;
+
+    /**
+     * @var bool
+     */
+    private $cache = false;
 
     /**
      * @param array $db
@@ -35,6 +43,10 @@ class RedBeanConstructor implements DbConstructorInterface
         }
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
     public function setDb($name)
     {
         $this->options = $this->db[$name];
@@ -43,11 +55,17 @@ class RedBeanConstructor implements DbConstructorInterface
         R::ext('xdispense', function ($type) {
             return R::getRedBean()->dispense($type);
         });
+        if($this->cache) {
+            R::useWriterCache(true);
+            R::freeze(TRUE);
+        }
         return $name;
     }
 
+    /**
+     *
+     */
     public function setCache(){
-        R::$writer->setUseCache(true);
-        R::freeze(TRUE);
+        $this->cache = true;
     }
 }

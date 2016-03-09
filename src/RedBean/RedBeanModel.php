@@ -136,8 +136,8 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         $args = func_get_args();
         if (count($args) == 0) $this->sql .= ' *,';
         foreach ($args as $arg)
-            $this->sql .= ' ' . $arg . ',';
-        $this->sql = substr($this->sql, 0, -1) . ' FROM ' . $this->table;
+            $this->sql .= ' ' .$this->alias.'.'.$arg . ',';
+        $this->sql = substr($this->sql, 0, -1) . ' FROM ' . $this->table . ' '. $this->alias;
         return $this;
     }
 
@@ -276,9 +276,9 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function set($contents)
     {
-        $update = 'UPDATE ' . $this->table . ' SET';
+        $update = 'UPDATE ' . $this->table .' '.$this->alias . ' SET';
         foreach ($contents as $key => $content) {
-            $update .= ' ' . $key . ' = :' . $key . ',';
+            $update .= ' ' .$this->alias.'.'. $key . ' = :' . $key . ',';
             $this->params[':' . $key] = $content;
         }
         $this->sql = substr($update, 0, -1) . $this->sql;
@@ -310,7 +310,7 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
      */
     public function delete()
     {
-        $this->sql = 'DELETE FROM ' . $this->table . ' '. $this->sql;
+        $this->sql = 'DELETE FROM ' . $this->table .' '.$this->alias. ' '. $this->sql;
         $query = R::exec($this->sql, $this->params);
         $this->sql = null;
         $this->params = [];

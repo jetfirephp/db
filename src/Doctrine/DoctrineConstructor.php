@@ -31,6 +31,9 @@ class DoctrineConstructor implements DbConstructorInterface
      */
     private $db;
 
+    /**
+     * @var
+     */
     private $allDb;
 
     /**
@@ -51,7 +54,7 @@ class DoctrineConstructor implements DbConstructorInterface
                     if (!isset($db['driver']) || !isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
                         throw new \Exception('Missing arguments for doctrine constructor');
                     $dbParams = array(
-                        'driver'   => ($db['driver'] === 'mysql') ? 'pdo_mysql' : $db['driver'],
+                        'driver'   => $this->getDriver($db['driver']),
                         'user'     => $db['user'],
                         'password' => $db['pass'],
                         'host'     => $db['host'],
@@ -68,6 +71,25 @@ class DoctrineConstructor implements DbConstructorInterface
                 return EntityManager::create($dbParams, $config, $evm);
             };
         }
+    }
+
+    /**
+     * @param $driver
+     * @return string
+     */
+    private function getDriver($driver){
+        switch($driver){
+            case 'mysql':
+                $driver = 'pdo_mysql';
+                break;
+            case 'pgsql':
+                $driver= 'pdo_pgsql';
+                break;
+            case 'sqlite':
+                $driver = 'pdo_sqlite';
+                break;
+        }
+        return $driver;
     }
 
     /**
