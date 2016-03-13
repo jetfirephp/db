@@ -37,7 +37,9 @@ class Model
      * @var null
      */
     public static $instance = null;
-
+    /**
+     * @var
+     */
     private static $keepLast;
     /**
      * @param ModelInterface $orm

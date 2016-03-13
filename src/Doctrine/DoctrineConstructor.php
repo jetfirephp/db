@@ -30,7 +30,6 @@ class DoctrineConstructor implements DbConstructorInterface
      * @var array
      */
     private $db;
-
     /**
      * @var
      */
