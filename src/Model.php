@@ -116,6 +116,10 @@ class Model
      * @return Model|null
      */
     public static function repo(){
+        if(is_null(self::$class))
+            self::$class = get_called_class();
+        self::table(self::$class);
+        self::$orm->setTable(self::$class);
         $repo = self::$orm->repo();
         return is_null($repo)?self::getInstance(get_called_class()):$repo;
     }
