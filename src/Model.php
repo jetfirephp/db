@@ -5,12 +5,29 @@ namespace JetFire\Db;
 /**
  * Class Model
  * @package JetFire\Db
+ * @method static all()
+ * @method static find($id)
+ * @method static select()
+ * @method static where($key, $operator = null, $value = null, $boolean = "AND")
+ * @method static orWhere($key, $operator = null, $value = null)
+ * @method static whereRaw($sql, $value = null)
+ * @method static get($single = false)
+ * @method static take($limit,$first = null,$single = false)
+ * @method static orderBy($value, $order = 'ASC')
+ * @method static count()
+ * @method static update($id, $contents = null)
+ * @method static with($contents)
+ * @method static set($contents)
+ * @method static create($contents = null)
+ * @method static delete()
+ * @method static destroy()
+ * @method static sql($sql, $params = [])
  */
 class Model
 {
 
     /**
-     * @var
+     * @var \JetFire\Db\Pdo\PdoModel|\JetFire\Db\Doctrine\DoctrineModel|\JetFire\Db\RedBean\RedBeanModel
      */
     public static $orm;
     /**
@@ -69,7 +86,7 @@ class Model
      */
     public static function getInstance($class)
     {
-        if (self::$class !== $class) {
+        if (is_null(self::$instance) || self::$class !== $class) {
             self::$class = $class;
             self::$instance = new self::$class;
         }
@@ -121,6 +138,10 @@ class Model
         self::table(self::$class);
         self::$orm->setTable(self::$class);
         $repo = self::$orm->repo();
+        if(!self::$keepLast) {
+            self::$orm = null;
+            self::$db = null;
+        }
         return is_null($repo)?self::getInstance(get_called_class()):$repo;
     }
 
@@ -147,7 +168,7 @@ class Model
     /**
      * @param $name
      * @param $args
-     * @return
+     * @return mixed
      */
     private static function call($name,$args){
         if(is_null(self::$class))

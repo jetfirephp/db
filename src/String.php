@@ -2,8 +2,15 @@
 
 namespace JetFire\Db;
 
+/**
+ * Class String
+ * @package JetFire\Db
+ */
 class String
 {
+    /**
+     * @var array
+     */
     static $plural = array(
         '/(quiz)$/i'                     => "$1zes",
         '/^(ox)$/i'                      => "$1en",
@@ -26,6 +33,9 @@ class String
         '/$/'                            => "s"
     );
 
+    /**
+     * @var array
+     */
     static $singular = array(
         '/(quiz)zes$/i'                                                    => "$1",
         '/(matr)ices$/i'                                                   => "$1ix",
@@ -57,6 +67,9 @@ class String
         '/s$/i'                                                            => ""
     );
 
+    /**
+     * @var array
+     */
     static $irregular = array(
         'move'   => 'moves',
         'foot'   => 'feet',
@@ -69,6 +82,9 @@ class String
         'valve'  => 'valves'
     );
 
+    /**
+     * @var array
+     */
     static $uncountable = array(
         'sheep',
         'fish',
@@ -81,6 +97,10 @@ class String
         'equipment'
     );
 
+    /**
+     * @param $string
+     * @return mixed
+     */
     public static function pluralize($string)
     {
         // save some time in the case that singular and plural are the same
@@ -105,6 +125,10 @@ class String
         return $string;
     }
 
+    /**
+     * @param $string
+     * @return mixed
+     */
     public static function singularize($string)
     {
         // save some time in the case that singular and plural are the same
@@ -128,6 +152,11 @@ class String
         return $string;
     }
 
+    /**
+     * @param $count
+     * @param $string
+     * @return string
+     */
     public static function pluralize_if($count, $string)
     {
         if ($count == 1)

@@ -67,6 +67,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @param $offset
      * @param $value
+     * @return mixed|void
      */
     public function __set($offset,$value){
         $this->getOrm()->params[$offset] = $value;

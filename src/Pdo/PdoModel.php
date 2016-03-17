@@ -387,14 +387,28 @@ class PdoModel extends PdoConstructor implements ModelInterface
     private function execQuery($sql,$params = []){
         $query = $this->pdo->prepare($sql);
         foreach($params as $key => $value) {
-            if(is_int($value))
-                $query->bindValue($key, $value,PDO::PARAM_INT);
-            elseif(is_string($value))
-                $query->bindValue($key, $value,PDO::PARAM_STR);
-            else
-                $query->bindValue($key, $value);
+            if(is_object($value))
+                $this->objectToValue($query,$key,$value);
+            else {
+                if (is_int($value))
+                    $query->bindValue($key, $value, PDO::PARAM_INT);
+                elseif (is_string($value))
+                    $query->bindValue($key, $value, PDO::PARAM_STR);
+                else
+                    $query->bindValue($key, $value);
+            }
         }
         $query->execute();
         return $query;
+    }
+
+    /**
+     * @param \PDOStatement $query
+     * @param $key
+     * @param $value
+     */
+    private function objectToValue(&$query,$key,$value){
+        if($value instanceof \DateTime)
+            $query->bindValue($key,$value->format('Y-m-d H:i:s'));
     }
 }

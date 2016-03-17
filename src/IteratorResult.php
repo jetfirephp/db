@@ -5,21 +5,67 @@ namespace JetFire\Db;
 
 use Iterator;
 
+/**
+ * Class IteratorResult
+ * @package JetFire\Db
+ */
 class IteratorResult implements Iterator {
 
+    /**
+     * @var array
+     */
     private $results = [];
 
+    /**
+     * @var array
+     */
     private $orms = [
         'pdo' => 'JetFire\Db\Pdo\PdoSingleResult',
         'doctrine' => 'JetFire\Db\Doctrine\DoctrineSingleResult',
         'redbean' => 'JetFire\Db\RedBean\RedBeanSingleResult',
     ];
 
+    /**
+     * @var string
+     */
     private $orm;
 
+    /**
+     * @param array $results
+     * @param string $orm
+     */
     public function __construct($results = [],$orm = 'pdo'){
         $this->results = $results;
         $this->orm = $orm;
+    }
+
+    /**
+     * @return int
+     */
+    public function count(){
+        return count($this->results);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function first(){
+        return $this->results[0];
+    }
+
+    /**
+     * @param $key
+     * @return mixed
+     */
+    public function take($key){
+        return $this->results[$key];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function last(){
+        return $this->results[count($this->results)-1];
     }
 
     /**
@@ -65,7 +111,7 @@ class IteratorResult implements Iterator {
     public function valid()
     {
         $key = key($this->results);
-       return ($key !== NULL && $key !== FALSE);
+        return ($key !== NULL && $key !== FALSE);
     }
 
     /**
