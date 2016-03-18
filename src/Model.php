@@ -5,23 +5,31 @@ namespace JetFire\Db;
 /**
  * Class Model
  * @package JetFire\Db
- * @method static all()
- * @method static find($id)
- * @method static select()
- * @method static where($key, $operator = null, $value = null, $boolean = "AND")
- * @method static orWhere($key, $operator = null, $value = null)
- * @method static whereRaw($sql, $value = null)
- * @method static get($single = false)
- * @method static take($limit,$first = null,$single = false)
- * @method static orderBy($value, $order = 'ASC')
- * @method static count()
- * @method static update($id, $contents = null)
- * @method static with($contents)
- * @method static set($contents)
- * @method static create($contents = null)
- * @method static delete()
- * @method static destroy()
- * @method static sql($sql, $params = [])
+ * @method static|object all()
+ * @method static|object find($id)
+ * @method static|object select()
+ * @method static|object where($key, $operator = null, $value = null, $boolean = "AND")
+ * @method static|object orWhere($key, $operator = null, $value = null)
+ * @method static|object whereRaw($sql, $value = null)
+ * @method static|object get($single = false)
+ * @method static|object take($limit,$first = null,$single = false)
+ * @method static|object orderBy($value, $order = 'ASC')
+ * @method static|object count()
+ * @method static|object update($id, $contents = null)
+ * @method static|object with($contents)
+ * @method static|object set($contents)
+ * @method static|object create($contents = null)
+ * @method static|object delete()
+ * @method static|object destroy()
+ * @method static|object getOrm()
+ * // Doctrine methods
+ * @method static|\Doctrine\ORM\EntityManager em()
+ * @method static|\Doctrine\ORM\QueryBuilder queryBuilder()
+ * @method static|object save()
+ * @method static|object watch()
+ * @method static|object watchAndSave()
+ * // RedBean methods
+ * @method static remove()
  */
 class Model
 {
@@ -82,7 +90,7 @@ class Model
 
     /**
      * @param $class
-     * @return Model|null
+     * @return Object|Model|null
      */
     public static function getInstance($class)
     {
@@ -95,7 +103,7 @@ class Model
 
     /**
      * @param $name
-     * @return Model|null
+     * @return Object|Model|null
      */
     public static function orm($name)
     {
@@ -107,7 +115,7 @@ class Model
 
     /**
      * @param string $name
-     * @return Model|null
+     * @return Object|Model|null
      */
     public static function db($name){
         if (is_null(self::$orm))
@@ -118,7 +126,7 @@ class Model
 
     /**
      * @param $table
-     * @return Model|null
+     * @return Object|Model|null
      */
     public static function table($table)
     {
@@ -130,7 +138,7 @@ class Model
     }
 
     /**
-     * @return Model|null
+     * @return Object|Model|null
      */
     public static function repo(){
         if(is_null(self::$class))
