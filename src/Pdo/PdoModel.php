@@ -5,7 +5,7 @@ namespace JetFire\Db\Pdo;
 
 use JetFire\Db\IteratorResult;
 use JetFire\Db\ModelInterface;
-use JetFire\Db\String;
+use JetFire\Db\TextTransform;
 use PDO;
 
 /**
@@ -58,7 +58,7 @@ class PdoModel extends PdoConstructor implements ModelInterface
         $this->class = $table;
         $class = explode('\\', $table);
         $class = end($class);
-        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . String::pluralize(strtolower($class)):String::pluralize(strtolower($class));
+        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . TextTransform::pluralize(strtolower($class)):TextTransform::pluralize(strtolower($class));
         $this->alias = strtolower(substr($class, 0, 1));
         return $this;
     }
