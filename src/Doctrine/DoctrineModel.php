@@ -155,11 +155,11 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function where($key, $operator = null, $value = null, $boolean = "AND")
     {
-        if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
-        if (empty($this->sql)) $this->sql = ' WHERE';
+        if (!is_null($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
+        if (is_null($this->sql)) $this->sql = ' WHERE';
         if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         // if we update or delete the entity
-        if (!empty($this->sql) && strpos($this->sql, 'WHERE') === false) {
+        if (!is_null($this->sql) && strpos($this->sql, 'WHERE') === false) {
             if (is_null($this->sql->getParameter($key)))
                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key")->setParameter($key, $value);
             else
@@ -195,8 +195,8 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function whereRaw($sql, $value = null)
     {
-        if (!empty($this->sql) && substr($this->sql, 0, 6) == 'SELECT') $this->sql .= ' WHERE ';
-        if (empty($this->sql)) $this->sql = ' WHERE ';
+        if (!is_null($this->sql) && substr($this->sql, 0, 6) == 'SELECT') $this->sql .= ' WHERE ';
+        if (is_null($this->sql)) $this->sql = ' WHERE ';
         $this->sql .= $sql;
         if (!is_null($value)) $this->params = array_merge($this->params, $value);
         return $this;
@@ -378,7 +378,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         return true;
     }
 
-
 //|---------------------------------------------------------------------------------|
 //| Delete methods are managed here                                                 |
 //|---------------------------------------------------------------------------------|
@@ -500,4 +499,24 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->em->flush();
         return true;
     }
+
+    /**
+     * @param array $contents
+     * @return bool
+     */
+    public function store($contents = []){
+        $replace = ['-', '_', '.'];
+        foreach ($contents as $key => $content) {
+            $key = str_replace($replace, ' ', $key);
+            $key = str_replace(' ', '', ucwords($key));
+            $method = 'set' . $key;
+            if (method_exists($this->instance, $method))
+                $this->instance->$method($content);
+        }
+        $this->em->persist($this->instance);
+        $this->em->flush();
+        $this->instance = null;
+        return true;
+    }
+
 } 
