@@ -24,6 +24,14 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
         $this->table = $table;
     }
 
+
+    /**
+     * @return mixed
+     */
+    public function _getTable(){
+        return $this->table;
+    }
+
     /**
      *
      */

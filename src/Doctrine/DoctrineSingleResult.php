@@ -30,6 +30,13 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
     }
 
     /**
+     * @return mixed
+     */
+    public function _getTable(){
+        return $this->table;
+    }
+
+    /**
      *
      */
     public function save(){

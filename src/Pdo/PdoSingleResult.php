@@ -38,7 +38,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @return mixed|null
      */
-    private function getOrm(){
+    private function _getOrm(){
         if(is_callable($this->orm))
             $this->orm = call_user_func($this->orm);
         return $this->orm;
@@ -47,8 +47,15 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @return mixed
      */
+    public function _getTable(){
+        return $this->table;
+    }
+
+    /**
+     * @return mixed
+     */
     public function save(){
-        $orm = $this->getOrm();
+        $orm = $this->_getOrm();
         if($this->type == 'read'){
             $orm->sql = 'WHERE id = :id';
             $orm->params['id'] = $this->table->id;
@@ -61,7 +68,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @return mixed
      */
     public function delete(){
-        return $this->getOrm()->destroy($this->table->id);
+        return $this->_getOrm()->destroy($this->table->id);
     }
 
     /**
@@ -70,7 +77,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @return mixed|void
      */
     public function __set($offset,$value){
-        $this->getOrm()->params[$offset] = $value;
+        $this->_getOrm()->params[$offset] = $value;
     }
 
     /**
@@ -92,7 +99,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
             return $this->table->$offset;
         }elseif(substr( $offset, 0, 3 ) == 'set') {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('set', '', $offset)));
-            $this->getOrm()->params[$offset] = $args[0];
+            $this->_getOrm()->params[$offset] = $args[0];
         }
         return null;
     }
@@ -121,7 +128,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetSet($offset, $value)
     {
-        $this->getOrm()->params[$offset] = $value;
+        $this->_getOrm()->params[$offset] = $value;
     }
 
     /**
@@ -129,6 +136,6 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetUnset($offset)
     {
-        $this->getOrm()->params[$offset] = NULL;
+        $this->_getOrm()->params[$offset] = NULL;
     }
 }
