@@ -407,7 +407,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function destroy()
     {
         $ids = func_get_args();
-        $ids = array_pop($ids);
+        if(func_num_args() == 1 && is_array($ids[0]))$ids = $ids[0];
         $qb = $this->queryBuilder();
         foreach ($ids as $id)
             $qb->delete($this->class, $this->alias)->where($qb->expr()->eq($this->alias . '.id', ':id'))->setParameter('id', $id)->getQuery()->execute();
