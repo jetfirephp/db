@@ -42,6 +42,13 @@ class IteratorResult implements Iterator {
     /**
      * @return int
      */
+    public function getResults(){
+        return $this->results;
+    }
+
+    /**
+     * @return int
+     */
     public function count(){
         return count($this->results);
     }

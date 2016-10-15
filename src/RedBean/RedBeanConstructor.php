@@ -34,6 +34,7 @@ class RedBeanConstructor implements DbConstructorInterface
     public function __construct($db = [])
     {
         $this->db = $db;
+        $this->cache = (isset($db['dev']) && $db['dev']) ? true : false;
         foreach($this->db as $key => $db){
             if (!isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
                 throw new \Exception('Missing arguments for RedBean constructor');
@@ -62,10 +63,4 @@ class RedBeanConstructor implements DbConstructorInterface
         return $name;
     }
 
-    /**
-     *
-     */
-    public function setCache(){
-        $this->cache = true;
-    }
 }

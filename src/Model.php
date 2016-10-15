@@ -141,7 +141,7 @@ class Model
      * @return Object|Model|null
      */
     public static function repo(){
-        if(is_null(self::$class))
+        if(is_null(self::$class) || self::$class != get_called_class())
             self::$class = get_called_class();
         self::table(self::$class);
         self::$orm->setTable(self::$class);

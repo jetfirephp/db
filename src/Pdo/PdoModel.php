@@ -57,9 +57,9 @@ class PdoModel extends PdoConstructor implements ModelInterface
     {
         $this->class = $table;
         $class = explode('\\', $table);
-        $class = end($class);
-        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . TextTransform::pluralize(strtolower($class)):TextTransform::pluralize(strtolower($class));
-        $this->alias = strtolower(substr($class, 0, 1));
+        $class = strtolower(preg_replace('/\B([A-Z])/', '_$1', end($class)));
+        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . TextTransform::pluralize($class):TextTransform::pluralize($class);
+        $this->alias = substr($class, 0, 1);
         return $this;
     }
 
@@ -157,9 +157,10 @@ class PdoModel extends PdoConstructor implements ModelInterface
         if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
+        $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:'.$key.')' : ':'.$key;
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
-            ? ' ' . "$param $operator :$key"
-            : ' ' . $boolean . ' ' . "$param $operator :$key";
+            ? ' ' . "$param $operator $sql_key"
+            : ' ' . $boolean . ' ' . "$param $operator $sql_key";
         $this->params[$key] = $value;
         return $this;
     }

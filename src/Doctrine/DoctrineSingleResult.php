@@ -37,6 +37,13 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
     }
 
     /**
+     * @return mixed
+     */
+    public function _serialize(){
+        return json_decode(json_encode($this->table));
+    }
+    
+    /**
      *
      */
     public function save(){

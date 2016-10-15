@@ -170,9 +170,10 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         //if we read the entity
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
+        $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:'.$key.')' : ':'.$key;
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
-            ? ' ' . $this->alias . '.' . "$param $operator :$key"
-            : ' ' . $boolean . ' ' . $this->alias . '.' . "$param $operator :$key";
+            ? ' ' . $this->alias . '.' . "$param $operator $sql_key"
+            : ' ' . $boolean . ' ' . $this->alias . '.' . "$param $operator $sql_key";
         $this->params[$key] = $value;
         return $this;
     }
@@ -387,7 +388,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function delete()
     {
-        $this->sql = 'DELETE FROM' . $this->class . ' ' . $this->alias . $this->sql;
+        $this->sql = 'DELETE FROM ' . $this->class . ' ' . $this->alias . $this->sql;
         $query = $this->query($this->sql);
         if (!empty($this->params))
             foreach ($this->params as $key => $param) {
@@ -442,6 +443,15 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     }
 
     /**
+     * @param $id
+     * @return bool|\Doctrine\Common\Proxy\Proxy|null|object
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function reference($id){
+        return $this->em->getReference($this->class,$id);
+    }
+
+    /**
      * @return \Doctrine\ORM\QueryBuilder
      */
     public function queryBuilder()
@@ -457,6 +467,17 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     {
         return $this->em->createQuery($query);
     }
+
+    /**
+     * @param null $entity
+     * @return DoctrineModel
+     */
+    public function instance($entity)
+    {
+        $this->instance = $entity;
+        return $this;
+    }
+
     /**
      * @param null $entity
      * @return bool
@@ -465,6 +486,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     {
         if (!is_null($entity)) $this->instance = $entity;
         $this->em->persist($this->instance);
+        $this->instance = null;
         return true;
     }
 
@@ -477,6 +499,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         if (!is_null($entity)) $this->instance = $entity;
         $this->em->persist($this->instance);
         $this->em->flush();
+        $this->instance = null;
         return true;
     }
 
@@ -485,6 +508,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function save()
     {
+        $this->instance = null;
         $this->em->flush();
         return true;
     }
@@ -513,10 +537,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
             if (method_exists($this->instance, $method))
                 $this->instance->$method($content);
         }
-        $this->em->persist($this->instance);
-        $this->em->flush();
-        $this->instance = null;
-        return true;
+        return $this->watchAndSave();
     }
 
 } 

@@ -4,7 +4,6 @@ namespace JetFire\Db\Doctrine;
 
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\EventManager;
-use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
@@ -31,17 +30,17 @@ class DoctrineConstructor implements DbConstructorInterface
      */
     private $db;
     /**
-     * @var
+     * @var array
      */
     private $allDb;
 
     /**
-     * @param array $db
+     * @param array $database
      * @throws \Exception
      */
-    public function __construct($db = [])
+    public function __construct($database = [])
     {
-        $this->db = $db;
+        $this->db = $database;
         foreach($this->db as $key => $db) {
             $this->allDb[$key] = function()use($db) {
                 $db['dev'] = (isset($db['dev']) && $db['dev']) ? true : false;
@@ -67,6 +66,16 @@ class DoctrineConstructor implements DbConstructorInterface
                     $evm->addEventListener(Events::loadClassMetadata, $tablePrefix);
                 }
                 $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
+                if(!$db['dev']) {
+                    $config->setQueryCacheImpl($db['cache']);
+                    $config->setResultCacheImpl($db['cache']);
+                    $config->setMetadataCacheImpl($db['cache']);
+                }
+                if(isset($db['functions']) && !empty($db['functions'])) {
+                    $config->setCustomDatetimeFunctions($db['functions']['customDatetimeFunctions']);
+                    $config->setCustomNumericFunctions($db['functions']['customNumericFunctions']);
+                    $config->setCustomStringFunctions($db['functions']['customStringFunctions']);
+                }
                 return EntityManager::create($dbParams, $config, $evm);
             };
         }
@@ -103,17 +112,5 @@ class DoctrineConstructor implements DbConstructorInterface
         $this->em = $this->allDb[$name];
         return $name;
     }
-
-
-    /**
-     * @param Cache $driver
-     */
-    public function setCache(Cache $driver){
-        $config = new Configuration();
-        $config->setQueryCacheImpl($driver);
-        $config->setResultCacheImpl($driver);
-        $config->setMetadataCacheImpl($driver);
-    }
-
 
 }

@@ -155,9 +155,10 @@ class RedBeanModel extends RedBeanConstructor implements ModelInterface
         if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
+        $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:'.$key.')' : ':'.$key;
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
-            ? ' ' . "$this->alias.$param $operator :$key"
-            : ' ' . $boolean . ' ' . "$this->alias.$param $operator :$key";
+            ? ' ' . "$this->alias.$param $operator $sql_key"
+            : ' ' . $boolean . ' ' . "$this->alias.$param $operator $sql_key";
         $this->params[$key] = $value;
         return $this;
     }
