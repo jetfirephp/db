@@ -37,68 +37,68 @@ class Model
     /**
      * @var \JetFire\Db\Pdo\PdoModel|\JetFire\Db\Doctrine\DoctrineModel|\JetFire\Db\RedBean\RedBeanModel
      */
-    public static $orm;
+    public static $_orm;
     /**
      * @var
      */
-    public static $allOrm;
+    public static $_allOrm;
     /**
      * @var
      */
-    public static $db;
+    public static $_db;
     /**
      * @var
      */
-    public static $default = [];
+    public static $_default = [];
     /**
      * @var array
      */
-    public static $provider = [];
+    public static $_provider = [];
     /**
      * @var
      */
-    public static $class;
+    public static $_class;
     /**
      * @var null
      */
-    public static $instance = null;
+    public static $_instance = null;
     /**
      * @var
      */
-    private static $keepLast;
+    private static $_keepLast;
     /**
-     * @param ModelInterface $orm
+     * @param ModelInterface $_orm
      */
-    public static function init(ModelInterface $orm)
+    public static function init(ModelInterface $_orm)
     {
-        self::$orm = $orm;
+        self::$_orm = $_orm;
     }
 
     /**
-     * @param array $provider
-     * @param array $default
-     * @param bool $keepLast
+     * @param array $_provider
+     * @param array $_default
+     * @param bool $_keepLast
      */
-    public static function provide($provider = [], $default = [],$keepLast = false)
+    public static function provide($_provider = [], $_default = [],$_keepLast = false)
     {
-        self::$provider = $provider;
-        reset($provider);
-        self::$default['orm'] = (isset($default['orm'])) ? $default['orm'] : key($provider);
-        self::$default['db'] = (isset($default['db'])) ? $default['db'] : 'default';
-        self::$keepLast = $keepLast;
+        self::$_provider = $_provider;
+        reset($_provider);
+        self::$_default['orm'] = (isset($_default['orm'])) ? $_default['orm'] : key($_provider);
+        self::$_default['db'] = (isset($_default['db'])) ? $_default['db'] : 'default';
+        self::$_keepLast = $_keepLast;
     }
 
     /**
-     * @param $class
+     * @param $_class
      * @return Object|Model|null
      */
-    public static function getInstance($class)
+    public static function getInstance($_class)
     {
-        if (is_null(self::$instance) || self::$class !== $class) {
-            self::$class = $class;
-            self::$instance = new self::$class;
+        if (is_null(self::$_instance) || self::$_class !== $_class) {
+            self::$_class = $_class;
+            self::$_instance = new self::$_class;
         }
-        return self::$instance;
+        return self::$_instance;
     }
 
     /**
@@ -107,9 +107,9 @@ class Model
      */
     public static function orm($name)
     {
-        if (!isset(self::$allOrm[$name]))
-            self::$allOrm[$name] = call_user_func(self::$provider[$name]);
-        self::$orm = self::$allOrm[$name];
+        if (!isset(self::$_allOrm[$name]))
+            self::$_allOrm[$name] = call_user_func(self::$_provider[$name]);
+        self::$_orm = self::$_allOrm[$name];
         return self::getInstance(get_called_class());
     }
 
@@ -118,9 +118,9 @@ class Model
      * @return Object|Model|null
      */
     public static function db($name){
-        if (is_null(self::$orm))
-            self::orm(self::$default['orm']);
-        self::$db = self::$orm->setDb($name);
+        if (is_null(self::$_orm))
+            self::orm(self::$_default['orm']);
+        self::$_db = self::$_orm->setDb($name);
         return self::getInstance(get_called_class());
     }
 
@@ -130,10 +130,10 @@ class Model
      */
     public static function table($table)
     {
-        if (is_null(self::$orm))
-            self::orm(self::$default['orm']);
-        if (is_null(self::$db))
-            self::db(self::$default['db']);
+        if (is_null(self::$_orm))
+            self::orm(self::$_default['orm']);
+        if (is_null(self::$_db))
+            self::db(self::$_default['db']);
         return self::getInstance($table);
     }
 
@@ -141,14 +141,14 @@ class Model
      * @return Object|Model|null
      */
     public static function repo(){
-        if(is_null(self::$class) || self::$class != get_called_class())
-            self::$class = get_called_class();
-        self::table(self::$class);
-        self::$orm->setTable(self::$class);
-        $repo = self::$orm->repo();
-        if(!self::$keepLast) {
-            self::$orm = null;
-            self::$db = null;
+        if(is_null(self::$_class) || self::$_class != get_called_class())
+            self::$_class = get_called_class();
+        self::table(self::$_class);
+        self::$_orm->setTable(self::$_class);
+        $repo = self::$_orm->repo();
+        if(!self::$_keepLast) {
+            self::$_orm = null;
+            self::$_db = null;
         }
         return is_null($repo)?self::getInstance(get_called_class()):$repo;
     }
@@ -179,14 +179,14 @@ class Model
      * @return mixed
      */
     private static function call($name,$args){
-        if(is_null(self::$class) || self::$class != get_called_class())
-            self::$class = get_called_class();
-        self::table(self::$class);
-        self::$orm->setTable(self::$class);
-        $call = self::$orm->callStatic($name, $args);
-        if(!self::$keepLast) {
-            self::$orm = null;
-            self::$db = null;
+        if(is_null(self::$_class) || self::$_class != get_called_class())
+            self::$_class = get_called_class();
+        self::table(self::$_class);
+        self::$_orm->setTable(self::$_class);
+        $call = self::$_orm->callStatic($name, $args);
+        if(!self::$_keepLast) {
+            self::$_orm = null;
+            self::$_db = null;
         }
         return $call;
     }
