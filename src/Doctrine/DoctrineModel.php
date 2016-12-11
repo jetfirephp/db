@@ -410,8 +410,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $ids = func_get_args();
         if(func_num_args() == 1 && is_array($ids[0]))$ids = $ids[0];
         $qb = $this->queryBuilder();
-        foreach ($ids as $id)
-            $qb->delete($this->class, $this->alias)->where($qb->expr()->eq($this->alias . '.id', ':id'))->setParameter('id', $id)->getQuery()->execute();
+        $qb->delete($this->class, $this->alias)->where($qb->expr()->in($this->alias . '.id', ':ids'))->setParameter('ids', $ids)->getQuery()->execute();
         return true;
     }
 
@@ -521,6 +520,16 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     {
         $this->em->remove($content);
         $this->em->flush();
+        return true;
+    }
+
+    /**
+     * @param $content
+     * @return bool
+     */
+    public function removeWatch($content)
+    {
+        $this->em->remove($content);
         return true;
     }
 
