@@ -546,5 +546,4 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
                 $this->instance->$method($content);
         }
     }
-
 } 
