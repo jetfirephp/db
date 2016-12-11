@@ -535,15 +535,17 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
 
     /**
      * @param array $contents
+     * @param null $instance
      */
-    public function store($contents = []){
+    public function store($contents = [], $instance = null){
         $replace = ['-', '_', '.'];
+        if(is_null($instance)) $instance = $this->instance;
         foreach ($contents as $key => $content) {
             $key = str_replace($replace, ' ', $key);
             $key = str_replace(' ', '', ucwords($key));
             $method = 'set' . $key;
-            if (method_exists($this->instance, $method))
-                $this->instance->$method($content);
+            if (method_exists($instance, $method))
+                $instance->$method($content);
         }
     }
 } 
