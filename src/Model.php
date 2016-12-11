@@ -66,6 +66,7 @@ class Model
      * @var
      */
     private static $_keepLast;
+
     /**
      * @param ModelInterface $_orm
      */
