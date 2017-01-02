@@ -536,6 +536,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     /**
      * @param array $contents
      * @param null $instance
+     * @return $this
      */
     public function store($contents = [], $instance = null){
         $replace = ['-', '_', '.'];
@@ -547,5 +548,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
             if (method_exists($instance, $method))
                 $instance->$method($content);
         }
+        return $this;
     }
 } 
