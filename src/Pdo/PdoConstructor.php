@@ -30,9 +30,10 @@ class PdoConstructor implements DbConstructorInterface
 
     /**
      * @param array $db
+     * @param array $params
      * @throws \Exception
      */
-    public function __construct($db = [])
+    public function __construct($db = [], $params = [])
     {
         $this->db = $db;
         foreach($this->db as $key => $db) {

@@ -36,13 +36,13 @@ class DoctrineConstructor implements DbConstructorInterface
 
     /**
      * @param array $database
-     * @throws \Exception
+     * @param array $params
      */
-    public function __construct($database = [])
+    public function __construct($database = [], $params = [])
     {
         $this->db = $database;
         foreach($this->db as $key => $db) {
-            $this->allDb[$key] = function()use($db) {
+            $this->allDb[$key] = function()use($db,$params) {
                 $db['dev'] = (isset($db['dev']) && $db['dev']) ? true : false;
                 if (isset($db['db_url'])) {
                     $dbParams = array(
@@ -67,14 +67,14 @@ class DoctrineConstructor implements DbConstructorInterface
                 }
                 $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
                 if(!$db['dev']) {
-                    $config->setQueryCacheImpl($db['cache']);
-                    $config->setResultCacheImpl($db['cache']);
-                    $config->setMetadataCacheImpl($db['cache']);
+                    $config->setQueryCacheImpl($params['cache']);
+                    $config->setResultCacheImpl($params['cache']);
+                    $config->setMetadataCacheImpl($params['cache']);
                 }
-                if(isset($db['functions']) && !empty($db['functions'])) {
-                    $config->setCustomDatetimeFunctions($db['functions']['customDatetimeFunctions']);
-                    $config->setCustomNumericFunctions($db['functions']['customNumericFunctions']);
-                    $config->setCustomStringFunctions($db['functions']['customStringFunctions']);
+                if(isset($params['functions']) && !empty($params['functions'])) {
+                    $config->setCustomDatetimeFunctions($params['functions']['customDatetimeFunctions']);
+                    $config->setCustomNumericFunctions($params['functions']['customNumericFunctions']);
+                    $config->setCustomStringFunctions($params['functions']['customStringFunctions']);
                 }
                 return EntityManager::create($dbParams, $config, $evm);
             };
