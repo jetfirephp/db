@@ -29,9 +29,11 @@ class RedBeanConstructor implements DbConstructorInterface
 
     /**
      * @param array $db
+     * @param array $params
      * @throws \Exception
+     * @throws \RedBeanPHP\RedException
      */
-    public function __construct($db = [])
+    public function __construct($db = [], $params = [])
     {
         $this->db = $db;
         $this->cache = (isset($db['dev']) && $db['dev']) ? true : false;
