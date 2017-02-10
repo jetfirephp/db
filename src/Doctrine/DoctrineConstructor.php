@@ -4,6 +4,7 @@ namespace JetFire\Db\Doctrine;
 
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\EventManager;
+use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
@@ -60,24 +61,64 @@ class DoctrineConstructor implements DbConstructorInterface
                         'charset'  => isset($db['charset']) ? $db['charset'] : 'utf8',
                     );
                 }
+                $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
+                $this->setEnv($db, $params, $config);
+                $this->setFunctions($params, $config);
+
                 $evm = new EventManager();
                 if (isset($db['prefix'])) {
                     $tablePrefix = new TablePrefix($db['prefix']);
                     $evm->addEventListener(Events::loadClassMetadata, $tablePrefix);
                 }
-                $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
-                if(!$db['dev']) {
-                    $config->setQueryCacheImpl($params['cache']);
-                    $config->setResultCacheImpl($params['cache']);
-                    $config->setMetadataCacheImpl($params['cache']);
-                }
-                if(isset($params['functions']) && !empty($params['functions'])) {
-                    $config->setCustomDatetimeFunctions($params['functions']['customDatetimeFunctions']);
-                    $config->setCustomNumericFunctions($params['functions']['customNumericFunctions']);
-                    $config->setCustomStringFunctions($params['functions']['customStringFunctions']);
-                }
+                $this->setEvents($params, $evm);
+
                 return EntityManager::create($dbParams, $config, $evm);
             };
+        }
+    }
+
+    /**
+     * @param array $params
+     * @param EventManager $evm
+     */
+    private function setEvents($params = [], EventManager $evm){
+        if(isset($params['events'])) {
+            if(isset($params['events']['listeners']) && is_array($params['events']['listeners'])) {
+                foreach ($params['events']['listeners'] as $listener) {
+                    if (is_array($listener) && isset($listener[1]))
+                        $evm->addEventListener($listener[0], $listener[1]);
+                }
+            }
+            if(isset($params['events']['subscribers']) && is_array($params['events']['subscribers'])) {
+                foreach ($params['events']['subscribers'] as $subscriber) {
+                    $evm->addEventSubscriber($subscriber);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array $params
+     * @param Configuration $config
+     */
+    private function setFunctions($params = [], Configuration $config){
+        if(isset($params['functions']) && !empty($params['functions'])) {
+            $config->setCustomDatetimeFunctions($params['functions']['customDatetimeFunctions']);
+            $config->setCustomNumericFunctions($params['functions']['customNumericFunctions']);
+            $config->setCustomStringFunctions($params['functions']['customStringFunctions']);
+        }
+    }
+
+    /**
+     * @param $db
+     * @param array $params
+     * @param Configuration $config
+     */
+    private function setEnv($db, $params = [], Configuration $config){
+        if(!$db['dev']) {
+            $config->setQueryCacheImpl($params['cache']);
+            $config->setResultCacheImpl($params['cache']);
+            $config->setMetadataCacheImpl($params['cache']);
         }
     }
 
