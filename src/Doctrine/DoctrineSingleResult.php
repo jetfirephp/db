@@ -9,7 +9,8 @@ use JetFire\Db\ResultInterface;
  * Class DoctrineSingleResult
  * @package JetFire\Db\Doctrine
  */
-class DoctrineSingleResult implements ResultInterface,ArrayAccess {
+class DoctrineSingleResult implements ResultInterface, ArrayAccess
+{
 
     /**
      * @var
@@ -24,29 +25,33 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      * @param $table
      * @param null $em
      */
-    public function __construct($table,$em = null){
+    public function __construct($table, $em = null)
+    {
         $this->table = $table;
-        if(!is_null($em))$this->em = $em;
+        if (!is_null($em)) $this->em = $em;
     }
 
     /**
      * @return mixed
      */
-    public function _getTable(){
+    public function _getTable()
+    {
         return $this->table;
     }
 
     /**
      * @return mixed
      */
-    public function _serialize(){
+    public function _serialize()
+    {
         return json_decode(json_encode($this->table));
     }
-    
+
     /**
      *
      */
-    public function save(){
+    public function save()
+    {
         $em = call_user_func($this->em);
         $em->persist($this->table);
         $em->flush();
@@ -55,7 +60,8 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
     /**
      *
      */
-    public function persist(){
+    public function persist()
+    {
         $em = call_user_func($this->em);
         $em->persist($this->table);
     }
@@ -63,7 +69,8 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
     /**
      *
      */
-    public function flush(){
+    public function flush()
+    {
         $em = call_user_func($this->em);
         $em->flush();
     }
@@ -71,7 +78,8 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
     /**
      *
      */
-    public function delete(){
+    public function delete()
+    {
         $em = call_user_func($this->em);
         $em->remove($this->table);
         $em->flush();
@@ -82,8 +90,9 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      * @param $value
      * @return mixed|void
      */
-    public function __set($offset,$value){
-        $offset = 'set'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+    public function __set($offset, $value)
+    {
+        $offset = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         $this->table->$offset($value);
     }
 
@@ -91,10 +100,11 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      * @param $offset
      * @return mixed
      */
-    public function __get($offset){
-        if(is_array($this->table))
+    public function __get($offset)
+    {
+        if (is_array($this->table))
             return $this->table[$offset];
-        $offset = 'get'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         return $this->table->$offset();
     }
 
@@ -103,8 +113,9 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      * @param $args
      * @return mixed
      */
-    public function __call($offset,$args){
-        if(is_array($this->table)) {
+    public function __call($offset, $args)
+    {
+        if (is_array($this->table)) {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('get', '', $offset)));
             return $this->table[$offset];
         }
@@ -117,9 +128,9 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetExists($offset)
     {
-        if(is_array($this->table))
+        if (is_array($this->table))
             return isset($this->table[$offset]);
-        $offset = 'get'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         return !is_null($this->table->$offset());
     }
 
@@ -129,9 +140,9 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetGet($offset)
     {
-        if(is_array($this->table))
+        if (is_array($this->table))
             return $this->table[$offset];
-        $offset = 'get'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         return $this->table->$offset();
     }
 
@@ -141,7 +152,7 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetSet($offset, $value)
     {
-        $offset = 'set'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $offset = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         $this->table->$offset($value);
     }
 
@@ -150,7 +161,7 @@ class DoctrineSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetUnset($offset)
     {
-        $offset = 'set'.str_replace(' ','',ucwords(str_replace('_',' ',$offset)));
+        $offset = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         $this->table->$offset(NULL);
     }
 }

@@ -55,7 +55,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->class = $table;
         $class = explode('\\', $table);
         $class = end($class);
-        $this->table = isset($this->options['prefix'])?$this->options['prefix'] . TextTransform::pluralize(strtolower($class)):TextTransform::pluralize(strtolower($class));
+        $this->table = isset($this->options['prefix']) ? $this->options['prefix'] . TextTransform::pluralize(strtolower($class)) : TextTransform::pluralize(strtolower($class));
         $this->alias = strtolower(substr($class, 0, 1));
         return $this;
     }
@@ -115,7 +115,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      */
     public function all()
     {
-        return new IteratorResult($this->repo($this->class)->findAll(),'doctrine');
+        return new IteratorResult($this->repo($this->class)->findAll(), 'doctrine');
     }
 
     /**
@@ -128,7 +128,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function find($id)
     {
         $this->instance = $this->em->find($this->class, $id);
-        return new DoctrineSingleResult($this->instance,function(){return $this->em();});
+        return new DoctrineSingleResult($this->instance, function () {
+            return $this->em();
+        });
     }
 
 
@@ -170,7 +172,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         //if we read the entity
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
-        $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:'.$key.')' : ':'.$key;
+        $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:' . $key . ')' : ':' . $key;
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
             ? ' ' . $this->alias . '.' . "$param $operator $sql_key"
             : ' ' . $boolean . ' ' . $this->alias . '.' . "$param $operator $sql_key";
@@ -222,7 +224,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      * @throws \Doctrine\ORM\NoResultException
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function take($limit,$first = null,$single = false)
+    public function take($limit, $first = null, $single = false)
     {
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $result = $this->query($this->sql);
@@ -234,12 +236,14 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
                     $result->setParameter($key, $param);
             }
         $result->setMaxResults($limit);
-        if(!is_null($first))$result->setFirstResult($first);
+        if (!is_null($first)) $result->setFirstResult($first);
         $this->sql = $this->table = null;
         $this->params = [];
         return ($limit == 1 && $single)
-            ? new DoctrineSingleResult($result->getSingleResult(),function(){return $this->em();})
-            : new IteratorResult($result->getResult(),'doctrine');
+            ? new DoctrineSingleResult($result->getSingleResult(), function () {
+                return $this->em();
+            })
+            : new IteratorResult($result->getResult(), 'doctrine');
     }
 
 
@@ -252,8 +256,10 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function get($single = false)
     {
         // create a new instance of the table
-        if(is_null($this->sql))
-            return new DoctrineSingleResult(new $this->class,function(){return $this->em();});
+        if (is_null($this->sql))
+            return new DoctrineSingleResult(new $this->class, function () {
+                return $this->em();
+            });
         $this->sql = (substr($this->sql, 0, 6) != 'SELECT') ? 'SELECT ' . $this->alias . ' FROM ' . $this->class . ' ' . $this->alias . $this->sql : $this->sql;
         $query = $this->query($this->sql);
         foreach ($this->params as $key => $param) {
@@ -265,9 +271,12 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->sql = $this->table = null;
         $this->params = [];
         $result = $query->getResult();
-        return ($single && count($result) ==  1)
-            ? new DoctrineSingleResult($result[0],function(){return $this->em();})
-            : new IteratorResult($result,'doctrine');
+        if (count($result) < 1) return null;
+        return ($single && count($result) == 1)
+            ? new DoctrineSingleResult($result[0], function () {
+                return $this->em();
+            })
+            : new IteratorResult($result, 'doctrine');
     }
 
     /**
@@ -408,7 +417,7 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     public function destroy()
     {
         $ids = func_get_args();
-        if(func_num_args() == 1 && is_array($ids[0]))$ids = $ids[0];
+        if (func_num_args() == 1 && is_array($ids[0])) $ids = $ids[0];
         $qb = $this->queryBuilder();
         $qb->delete($this->class, $this->alias)->where($qb->expr()->in($this->alias . '.id', ':ids'))->setParameter('ids', $ids)->getQuery()->execute();
         return true;
@@ -446,8 +455,9 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      * @return bool|\Doctrine\Common\Proxy\Proxy|null|object
      * @throws \Doctrine\ORM\ORMException
      */
-    public function reference($id){
-        return $this->em->getReference($this->class,$id);
+    public function reference($id)
+    {
+        return $this->em->getReference($this->class, $id);
     }
 
     /**
@@ -538,9 +548,10 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
      * @param null $instance
      * @return $this
      */
-    public function store($contents = [], $instance = null){
+    public function store($contents = [], $instance = null)
+    {
         $replace = ['-', '_', '.'];
-        if(is_null($instance)) $instance = $this->instance;
+        if (is_null($instance)) $instance = $this->instance;
         foreach ($contents as $key => $content) {
             $key = str_replace($replace, ' ', $key);
             $key = str_replace(' ', '', ucwords($key));

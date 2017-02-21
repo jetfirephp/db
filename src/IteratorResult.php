@@ -40,7 +40,7 @@ class IteratorResult implements Iterator {
     }
 
     /**
-     * @return int
+     * @return mixed
      */
     public function getResults(){
         return $this->results;

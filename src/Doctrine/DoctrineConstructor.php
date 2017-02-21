@@ -42,8 +42,8 @@ class DoctrineConstructor implements DbConstructorInterface
     public function __construct($database = [], $params = [])
     {
         $this->db = $database;
-        foreach($this->db as $key => $db) {
-            $this->allDb[$key] = function()use($db,$params) {
+        foreach ($this->db as $key => $db) {
+            $this->allDb[$key] = function () use ($db, $params) {
                 $db['dev'] = (isset($db['dev']) && $db['dev']) ? true : false;
                 if (isset($db['db_url'])) {
                     $dbParams = array(
@@ -53,12 +53,12 @@ class DoctrineConstructor implements DbConstructorInterface
                     if (!isset($db['driver']) || !isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
                         throw new \Exception('Missing arguments for doctrine constructor');
                     $dbParams = array(
-                        'driver'   => $this->getDriver($db['driver']),
-                        'user'     => $db['user'],
+                        'driver' => $this->getDriver($db['driver']),
+                        'user' => $db['user'],
                         'password' => $db['pass'],
-                        'host'     => $db['host'],
-                        'dbname'   => $db['db'],
-                        'charset'  => isset($db['charset']) ? $db['charset'] : 'utf8',
+                        'host' => $db['host'],
+                        'dbname' => $db['db'],
+                        'charset' => isset($db['charset']) ? $db['charset'] : 'utf8',
                     );
                 }
                 $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
@@ -81,15 +81,16 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param EventManager $evm
      */
-    private function setEvents($params = [], EventManager $evm){
-        if(isset($params['events'])) {
-            if(isset($params['events']['listeners']) && is_array($params['events']['listeners'])) {
+    private function setEvents($params = [], EventManager $evm)
+    {
+        if (isset($params['events'])) {
+            if (isset($params['events']['listeners']) && is_array($params['events']['listeners'])) {
                 foreach ($params['events']['listeners'] as $listener) {
                     if (is_array($listener) && isset($listener[1]))
                         $evm->addEventListener($listener[0], $listener[1]);
                 }
             }
-            if(isset($params['events']['subscribers']) && is_array($params['events']['subscribers'])) {
+            if (isset($params['events']['subscribers']) && is_array($params['events']['subscribers'])) {
                 foreach ($params['events']['subscribers'] as $subscriber) {
                     $evm->addEventSubscriber($subscriber);
                 }
@@ -101,8 +102,9 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param Configuration $config
      */
-    private function setFunctions($params = [], Configuration $config){
-        if(isset($params['functions']) && !empty($params['functions'])) {
+    private function setFunctions($params = [], Configuration $config)
+    {
+        if (isset($params['functions']) && !empty($params['functions'])) {
             $config->setCustomDatetimeFunctions($params['functions']['customDatetimeFunctions']);
             $config->setCustomNumericFunctions($params['functions']['customNumericFunctions']);
             $config->setCustomStringFunctions($params['functions']['customStringFunctions']);
@@ -114,8 +116,9 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param Configuration $config
      */
-    private function setEnv($db, $params = [], Configuration $config){
-        if(!$db['dev']) {
+    private function setEnv($db, $params = [], Configuration $config)
+    {
+        if (!$db['dev']) {
             $config->setQueryCacheImpl($params['cache']);
             $config->setResultCacheImpl($params['cache']);
             $config->setMetadataCacheImpl($params['cache']);
@@ -126,13 +129,14 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param $driver
      * @return string
      */
-    private function getDriver($driver){
-        switch($driver){
+    private function getDriver($driver)
+    {
+        switch ($driver) {
             case 'mysql':
                 $driver = 'pdo_mysql';
                 break;
             case 'pgsql':
-                $driver= 'pdo_pgsql';
+                $driver = 'pdo_pgsql';
                 break;
             case 'sqlite':
                 $driver = 'pdo_sqlite';
@@ -146,9 +150,10 @@ class DoctrineConstructor implements DbConstructorInterface
      * @return $this
      * @throws \Exception
      */
-    public function setDb($name){
+    public function setDb($name)
+    {
         $this->options = $this->db[$name];
-        if(is_callable($this->allDb[$name]))
+        if (is_callable($this->allDb[$name]))
             $this->allDb[$name] = call_user_func($this->allDb[$name]);
         $this->em = $this->allDb[$name];
         return $name;
