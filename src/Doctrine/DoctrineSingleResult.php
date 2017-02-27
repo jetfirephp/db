@@ -88,7 +88,7 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
     /**
      * @param $offset
      * @param $value
-     * @return mixed|void
+     * @return void
      */
     public function __set($offset, $value)
     {
