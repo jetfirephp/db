@@ -271,7 +271,6 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $this->sql = $this->table = null;
         $this->params = [];
         $result = $query->getResult();
-        if (count($result) < 1) return null;
         return ($single && count($result) == 1)
             ? new DoctrineSingleResult($result[0], function () {
                 return $this->em();
