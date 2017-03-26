@@ -159,11 +159,14 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
     {
         if (!is_null($this->sql) && substr($this->sql, 0, 6) == 'SELECT' && strpos($this->sql, 'WHERE') === false) $this->sql .= ' WHERE';
         if (is_null($this->sql)) $this->sql = ' WHERE';
-        if (is_null($value) || $boolean == 'OR') list($key, $operator, $value) = array($key, '=', $operator);
+        if (is_null($value) && $operator != 'IS NULL' && $operator != 'IS NOT NULL') list($key, $operator, $value) = array($key, '=', $operator);
+
         // if we update or delete the entity
         if (!is_null($this->sql) && strpos($this->sql, 'WHERE') === false) {
             if (is_null($this->sql->getParameter($key)))
                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key")->setParameter($key, $value);
+            elseif ($operator == 'IS NULL' || $operator == 'IS NOT NULL')
+                $this->sql = $this->sql->where($this->alias . ".$key $operator");
             else
                 $this->sql = $this->sql->where($this->alias . ".$key $operator :$key" . '_' . $value)->setParameter($key . '_' . $value, $value);
             return $this;
@@ -173,10 +176,14 @@ class DoctrineModel extends DoctrineConstructor implements ModelInterface
         $param = $key;
         if (strpos($this->sql, ':' . $key) !== false) $key = $param . '_' . uniqid();
         $sql_key = ($operator == 'IN' || $operator == 'NOT IN') ? '(:' . $key . ')' : ':' . $key;
+        if ($operator == 'IS NULL' || $operator == 'IS NOT NULL') {
+            $sql_key = '';
+        } else {
+            $this->params[$key] = $value;
+        }
         $this->sql .= (substr($this->sql, -6) == ' WHERE')
             ? ' ' . $this->alias . '.' . "$param $operator $sql_key"
             : ' ' . $boolean . ' ' . $this->alias . '.' . "$param $operator $sql_key";
-        $this->params[$key] = $value;
         return $this;
     }
 
