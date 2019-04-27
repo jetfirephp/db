@@ -9,7 +9,8 @@ use JetFire\Db\ResultInterface;
  * Class PdoSingleResult
  * @package JetFire\Db\Pdo
  */
-class PdoSingleResult implements ResultInterface,ArrayAccess {
+class PdoSingleResult implements ResultInterface, ArrayAccess
+{
 
     /**
      * @var
@@ -29,34 +30,43 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @param $table
      * @param null $orm
      */
-    public function __construct($table,$orm = null){
+    public function __construct($table, $orm = null)
+    {
         $this->table = $table;
-        if(isset($this->table->id))$this->type = 'read';
-        if(!is_null($orm)) $this->orm = $orm;
+        if (isset($this->table->id)) {
+            $this->type = 'read';
+        }
+        if ($orm !== null) {
+            $this->orm = $orm;
+        }
     }
 
     /**
      * @return mixed|null
      */
-    private function _getOrm(){
-        if(is_callable($this->orm))
+    private function _getOrm()
+    {
+        if (is_callable($this->orm)) {
             $this->orm = call_user_func($this->orm);
+        }
         return $this->orm;
     }
 
     /**
      * @return mixed
      */
-    public function _getTable(){
+    public function _getTable()
+    {
         return $this->table;
     }
 
     /**
      * @return mixed
      */
-    public function save(){
+    public function save()
+    {
         $orm = $this->_getOrm();
-        if($this->type == 'read'){
+        if ($this->type === 'read') {
             $orm->sql = 'WHERE id = :id';
             $orm->params['id'] = $this->table->id;
             return $orm->add($orm->params);
@@ -67,7 +77,8 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @return mixed
      */
-    public function delete(){
+    public function delete()
+    {
         return $this->_getOrm()->destroy($this->table->id);
     }
 
@@ -76,7 +87,8 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @param $value
      * @return mixed|void
      */
-    public function __set($offset,$value){
+    public function __set($offset, $value)
+    {
         $this->_getOrm()->params[$offset] = $value;
     }
 
@@ -84,7 +96,8 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @param $offset
      * @return mixed
      */
-    public function __get($offset){
+    public function __get($offset)
+    {
         return $this->table->$offset;
     }
 
@@ -93,11 +106,14 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      * @param $args
      * @return null
      */
-    public function __call($offset,$args){
-        if(substr( $offset, 0, 3 ) == 'get') {
+    public function __call($offset, $args)
+    {
+        if (strpos($offset, 'get') === 0) {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('get', '', $offset)));
             return $this->table->$offset;
-        }elseif(substr( $offset, 0, 3 ) == 'set') {
+        }
+
+        if (strpos($offset, 'set') === 0) {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('set', '', $offset)));
             $this->_getOrm()->params[$offset] = $args[0];
         }
@@ -110,7 +126,7 @@ class PdoSingleResult implements ResultInterface,ArrayAccess {
      */
     public function offsetExists($offset)
     {
-        return !is_null($this->table->$offset);
+        return $this->table->$offset !== null;
     }
 
     /**

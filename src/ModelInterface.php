@@ -61,7 +61,7 @@ interface ModelInterface
      * @param string $boolean
      * @return mixed
      */
-    public function where($key, $operator = null, $value = null, $boolean = "AND");
+    public function where($key, $operator = null, $value = null, $boolean = 'AND');
 
     /**
      * @param $key
@@ -92,7 +92,7 @@ interface ModelInterface
      * @internal param bool $array
      * @return mixed
      */
-    public function take($limit,$first = null,$single = false);
+    public function take($limit, $first = null, $single = false);
 
     /**
      * @param bool $single

@@ -12,7 +12,10 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=7.1.0",
+        "doctrine/orm": "^2.6",
+        "gabordemooij/redbean": "^5.3",
+        "ext-pdo": "*"
     },
     "suggest": {
         "doctrine/orm": "For Doctrine usage",

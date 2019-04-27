@@ -9,12 +9,13 @@ use Iterator;
  * Class IteratorResult
  * @package JetFire\Db
  */
-class IteratorResult implements Iterator {
+class IteratorResult implements Iterator
+{
 
     /**
      * @var array
      */
-    private $results = [];
+    private $results;
 
     /**
      * @var array
@@ -34,7 +35,8 @@ class IteratorResult implements Iterator {
      * @param array $results
      * @param string $orm
      */
-    public function __construct($results = [],$orm = 'pdo'){
+    public function __construct($results = [], $orm = 'pdo')
+    {
         $this->results = $results;
         $this->orm = $orm;
     }
@@ -42,21 +44,24 @@ class IteratorResult implements Iterator {
     /**
      * @return mixed
      */
-    public function getResults(){
+    public function getResults()
+    {
         return $this->results;
     }
 
     /**
      * @return int
      */
-    public function count(){
+    public function count()
+    {
         return count($this->results);
     }
 
     /**
      * @return mixed
      */
-    public function first(){
+    public function first()
+    {
         return $this->results[0];
     }
 
@@ -64,15 +69,17 @@ class IteratorResult implements Iterator {
      * @param $key
      * @return mixed
      */
-    public function take($key){
+    public function take($key)
+    {
         return $this->results[$key];
     }
 
     /**
      * @return mixed
      */
-    public function last(){
-        return $this->results[count($this->results)-1];
+    public function last()
+    {
+        return $this->results[count($this->results) - 1];
     }
 
     /**

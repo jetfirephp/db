@@ -2,7 +2,6 @@
 
 namespace JetFire\Db\Doctrine;
 
-use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\EventManager;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
@@ -44,21 +43,22 @@ class DoctrineConstructor implements DbConstructorInterface
         $this->db = $database;
         foreach ($this->db as $key => $db) {
             $this->allDb[$key] = function () use ($db, $params) {
-                $db['dev'] = (isset($db['dev']) && $db['dev']) ? true : false;
+                $db['dev'] = (isset($db['dev']) && $db['dev']);
                 if (isset($db['db_url'])) {
                     $dbParams = array(
                         'url' => $db['db_url']
                     );
                 } else {
-                    if (!isset($db['driver']) || !isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
-                        throw new \Exception('Missing arguments for doctrine constructor');
+                    if (!isset($db['driver'], $db['user'], $db['pass'], $db['host'], $db['db'])) {
+                        throw new \RuntimeException('Missing arguments for doctrine constructor');
+                    }
                     $dbParams = array(
                         'driver' => $this->getDriver($db['driver']),
                         'user' => $db['user'],
                         'password' => $db['pass'],
                         'host' => $db['host'],
                         'dbname' => $db['db'],
-                        'charset' => isset($db['charset']) ? $db['charset'] : 'utf8',
+                        'charset' => $db['charset'] ?? 'utf8',
                     );
                 }
                 $config = Setup::createAnnotationMetadataConfiguration($db['path'], $db['dev']);
@@ -81,7 +81,7 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param EventManager $evm
      */
-    private function setEvents($params = [], EventManager $evm)
+    private function setEvents($params = [], EventManager $evm): void
     {
         if (isset($params['events'])) {
             if (isset($params['events']['listeners']) && is_array($params['events']['listeners'])) {
@@ -102,7 +102,7 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param Configuration $config
      */
-    private function setFunctions($params = [], Configuration $config)
+    private function setFunctions($params = [], Configuration $config): void
     {
         if (isset($params['functions']) && !empty($params['functions'])) {
             $config->setCustomDatetimeFunctions($params['functions']['customDatetimeFunctions']);
@@ -116,7 +116,7 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param array $params
      * @param Configuration $config
      */
-    private function setEnv($db, $params = [], Configuration $config)
+    private function setEnv($db, $params = [], Configuration $config): void
     {
         if (!$db['dev']) {
             $config->setQueryCacheImpl($params['cache']);
@@ -129,7 +129,7 @@ class DoctrineConstructor implements DbConstructorInterface
      * @param $driver
      * @return string
      */
-    private function getDriver($driver)
+    private function getDriver($driver): string
     {
         switch ($driver) {
             case 'mysql':
@@ -147,14 +147,14 @@ class DoctrineConstructor implements DbConstructorInterface
 
     /**
      * @param $name
-     * @return $this
      * @throws \Exception
      */
     public function setDb($name)
     {
         $this->options = $this->db[$name];
-        if (is_callable($this->allDb[$name]))
+        if (is_callable($this->allDb[$name])) {
             $this->allDb[$name] = call_user_func($this->allDb[$name]);
+        }
         $this->em = $this->allDb[$name];
         return $name;
     }

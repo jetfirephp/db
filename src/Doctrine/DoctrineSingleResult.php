@@ -28,7 +28,9 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
     public function __construct($table, $em = null)
     {
         $this->table = $table;
-        if (!is_null($em)) $this->em = $em;
+        if ($em !== null) {
+            $this->em = $em;
+        }
     }
 
     /**
@@ -44,7 +46,7 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
      */
     public function _serialize()
     {
-        return json_decode(json_encode($this->table));
+        return json_decode(json_encode($this->table), true);
     }
 
     /**
@@ -102,8 +104,9 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
      */
     public function __get($offset)
     {
-        if (is_array($this->table))
+        if (is_array($this->table)) {
             return $this->table[$offset];
+        }
         $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         return $this->table->$offset();
     }
@@ -128,10 +131,11 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
      */
     public function offsetExists($offset)
     {
-        if (is_array($this->table))
+        if (is_array($this->table)) {
             return isset($this->table[$offset]);
+        }
         $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
-        return !is_null($this->table->$offset());
+        return $this->table->$offset() !== null;
     }
 
     /**
@@ -140,8 +144,9 @@ class DoctrineSingleResult implements ResultInterface, ArrayAccess
      */
     public function offsetGet($offset)
     {
-        if (is_array($this->table))
+        if (is_array($this->table)) {
             return $this->table[$offset];
+        }
         $offset = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $offset)));
         return $this->table->$offset();
     }

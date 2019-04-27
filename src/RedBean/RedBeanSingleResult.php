@@ -10,7 +10,8 @@ use RedBeanPHP\R;
  * Class RedBeanSingleResult
  * @package JetFire\Db\RedBean
  */
-class RedBeanSingleResult implements ResultInterface,ArrayAccess {
+class RedBeanSingleResult implements ResultInterface, ArrayAccess
+{
 
     /**
      * @var
@@ -20,7 +21,8 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @param $table
      */
-    public function __construct($table){
+    public function __construct($table)
+    {
         $this->table = $table;
     }
 
@@ -28,21 +30,24 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
     /**
      * @return mixed
      */
-    public function _getTable(){
+    public function _getTable()
+    {
         return $this->table;
     }
 
     /**
      *
      */
-    public function save(){
+    public function save()
+    {
         R::store($this->table);
     }
 
     /**
      *
      */
-    public function delete(){
+    public function delete()
+    {
         R::trash($this->table);
     }
 
@@ -51,7 +56,8 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
      * @param $value
      * @return mixed|void
      */
-    public function __set($offset,$value){
+    public function __set($offset, $value)
+    {
         $this->table->$offset = $value;
     }
 
@@ -59,7 +65,8 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
      * @param $offset
      * @return mixed
      */
-    public function __get($offset){
+    public function __get($offset)
+    {
         return $this->table[$offset];
     }
 
@@ -68,11 +75,14 @@ class RedBeanSingleResult implements ResultInterface,ArrayAccess {
      * @param $args
      * @return null
      */
-    public function __call($offset,$args){
-        if(substr( $offset, 0, 3 ) == 'get') {
+    public function __call($offset, $args)
+    {
+        if (strpos($offset, 'get') === 0) {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('get', '', $offset)));
             return $this->table[$offset];
-        }elseif(substr( $offset, 0, 3 ) == 'set') {
+        }
+
+        if (strpos($offset, 'set') === 0) {
             $offset = strtolower(preg_replace('/\B([A-Z])/', '_$1', str_replace('set', '', $offset)));
             $this->table->$offset = $args[0];
         }

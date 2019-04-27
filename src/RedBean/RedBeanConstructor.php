@@ -25,22 +25,23 @@ class RedBeanConstructor implements DbConstructorInterface
     /**
      * @var bool
      */
-    private $cache = false;
+    private $cache;
 
     /**
      * @param array $db
      * @param array $params
-     * @throws \Exception
+     * @throws \RuntimeException
      * @throws \RedBeanPHP\RedException
      */
     public function __construct($db = [], $params = [])
     {
         $this->db = $db;
-        $this->cache = (isset($db['dev']) && $db['dev']) ? true : false;
+        $this->cache = (isset($db['dev']) && $db['dev']);
         foreach($this->db as $key => $db){
-            if (!isset($db['user']) || !isset($db['pass']) || !isset($db['host']) || !isset($db['db']))
-                throw new \Exception('Missing arguments for RedBean constructor');
-            ($db['driver'] == 'sqlite')
+            if (!isset($db['user'], $db['pass'], $db['host'], $db['db'])) {
+                throw new \RuntimeException('Missing arguments for RedBean constructor');
+            }
+            ($db['driver'] === 'sqlite')
                 ? R::addDatabase($key,'sqlite:/tmp/dbfile.db')
                 : R::addDatabase($key, $db['driver'] . ':host=' . $db['host'] . ';dbname=' . $db['db'], $db['user'], $db['pass']);
         }
@@ -49,6 +50,7 @@ class RedBeanConstructor implements DbConstructorInterface
     /**
      * @param $name
      * @return mixed
+     * @throws \RedBeanPHP\RedException
      */
     public function setDb($name)
     {
